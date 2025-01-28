@@ -2,10 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "SAE_L1.exe"
-		},
-		{
-			"path" : "SAE_L1.pdb"
+			"path" : "SAE_L1"
 		}
 	],
 	"backtrace" : 1,
@@ -51,18 +48,18 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-g -std=gnu11 -fdiagnostics-color=always"
+					"fragment" : "-g -std=gnu11 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -fcolor-diagnostics"
 				}
 			],
 			"includes" : 
 			[
 				{
 					"backtrace" : 2,
-					"path" : "C:/Users/starf/CLionProjects/SAE-L1/."
+					"path" : "/Users/anaderfurth/CLionProjects/SAE(L1/."
 				},
 				{
 					"backtrace" : 3,
-					"path" : "C:/Users/starf/CLionProjects/SAE-L1/common"
+					"path" : "/Users/anaderfurth/CLionProjects/SAE(L1/common"
 				}
 			],
 			"language" : "C",
@@ -93,16 +90,12 @@
 			{
 				"fragment" : "",
 				"role" : "flags"
-			},
-			{
-				"fragment" : "-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32",
-				"role" : "libraries"
 			}
 		],
 		"language" : "C"
 	},
 	"name" : "SAE_L1",
-	"nameOnDisk" : "SAE_L1.exe",
+	"nameOnDisk" : "SAE_L1",
 	"paths" : 
 	{
 		"build" : ".",

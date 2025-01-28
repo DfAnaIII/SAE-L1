@@ -15,26 +15,24 @@ typedef struct Global {
     char finish[100];
 };
 
-
-
-void aff() {
+// Fonction pour afficher le contenue du ficher
+void aff(const char* nomFichier) {
 
     char c;
 
-    FILE* fichier = fopen("test.txt", "r+");
+    FILE* fichier = fopen(nomFichier, "r");
 
     if(fichier==NULL){
         printf("Le fichier de depart est null");
         return;
     }
 
-    while((c=fgetc(fichier))!=EOF){
-        printf("%c",c);
+    while ((c = fgetc(fichier)) != EOF) {
+        putchar(c);
     }
 
     fclose(fichier);
 }
-
 
 void Struct_Dyna(int NB_ACTION) {
     int i;
@@ -50,9 +48,10 @@ void Struct_Dyna(int NB_ACTION) {
     }
 }
 
-
-
 int main() {
-    aff();
+    const char* nomFichier = "monkeys.txt";
+    aff(nomFichier);
+
+    return 0;
 }
 
