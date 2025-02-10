@@ -53,28 +53,32 @@ int rear = 0;              // Indice d'écriture de la file
 // 1) Affichage ASCII de présentation
 // ---------------------------------------------------------------------
 void afficherEnteteASCII() {
-    printf("***********************************************\n");
-    printf("*                                              *\n");
-    printf("*      Projet GPS (General Problem Solver)     *\n");
-    printf("*                                              *\n");
-    printf("*   Fait par Florian SILVA et Ana D'erfurth    *\n");
-    printf("*                                              *\n");
-    printf("***********************************************\n\n");
+    printf("+----------------------------------------------+\n");
+    printf("|                                              |\n");
+    printf("|      Projet GPS (General Problem Solver)     |\n");
+    printf("|                                              |\n");
+    printf("|   Fait par Florian SILVA et Ana D'Erfurth    |\n");
+    printf("|                                              |\n");
+    printf("+----------------------------------------------+\n\n");
 }
 
 // ---------------------------------------------------------------------
 // 2) Menu principal
 // ---------------------------------------------------------------------
 int afficherMenu() {
-    printf("Menu principal :\n");
-    printf("1) Utiliser le fichier par defaut (monkeys.txt)\n");
-    printf("2) Indiquer un fichier personnalise\n");
-    printf("3) Creer un nouveau fichier\n");
-    printf("0) Quitter\n");
+    printf("+---------------------------------------------------+\n");
+    printf("|                                                   |\n");
+    printf("|                 Menu principal :                  |\n");
+    printf("|                                                   |\n");
+    printf("|  1) Utiliser le fichier par defaut (monkeys.txt)  |\n");
+    printf("|  2) Indiquer un fichier personnalise              |\n");
+    printf("|  3) Creer un nouveau fichier                      |\n");
+    printf("|  0) Quitter                                       |\n");
+    printf("|                                                   |\n");
+    printf("+---------------------------------------------------+\n");
     printf("Votre choix : ");
     int choix;
     scanf("%d", &choix);
-    getchar(); // Pour consommer le '\n' restant
     return choix;
 }
 
@@ -399,105 +403,92 @@ int creerFichier(char* nomFichier) {
     return 1;
 }
 
-// ---------------------------------------------------------------------
-// 7) Programme principal
-// ---------------------------------------------------------------------
-int main() {
-    // Affichage ASCII
-    afficherEnteteASCII();
+void choixUn(){
+    // Fichier par defaut : monkeys.txt
+    const char* defaultFile = "monkeys.txt";
+    State initial;
+    Goal goal;
+    Action actions[MAX_ACTIONS];
+    int actionCount = 0;
 
-    // Menu principal
-    while(1) {
-        int choix = afficherMenu();
-        if(choix == 0) {
-            printf("Au revoir !\n");
-            break;
-        } 
-        else if(choix == 1) {
-            // Fichier par defaut : monkeys.txt
-            const char* defaultFile = "monkeys.txt";
-            State initial;
-            Goal goal;
-            Action actions[MAX_ACTIONS];
-            int actionCount = 0;
+    if(!parseFile(defaultFile, &initial, &goal, actions, &actionCount)) {
+        // erreur
+    }
 
-            if(!parseFile(defaultFile, &initial, &goal, actions, &actionCount)) {
-                // erreur
-                continue;
-            }
+    // Affichage simple
+    printf("\n=== ETAT INITIAL (START) ===\n");
+    printf("Nombre de faits: %d\n", initial.factCount);
+    for(int i=0; i<initial.factCount; i++){
+        printf(" - %s\n", initial.facts[i]);
+    }
 
-            // Affichage simple
-            printf("\n=== ETAT INITIAL (START) ===\n");
-            printf("Nombre de faits: %d\n", initial.factCount);
-            for(int i=0; i<initial.factCount; i++){
-                printf(" - %s\n", initial.facts[i]);
-            }
+    printf("\n=== OBJECTIF (FINISH) ===\n");
+    printf("Nombre de faits: %d\n", goal.factCount);
+    for(int i=0; i<goal.factCount; i++){
+        printf(" - %s\n", goal.facts[i]);
+    }
 
-            printf("\n=== OBJECTIF (FINISH) ===\n");
-            printf("Nombre de faits: %d\n", goal.factCount);
-            for(int i=0; i<goal.factCount; i++){
-                printf(" - %s\n", goal.facts[i]);
-            }
+    printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
+    for(int i=0; i<actionCount; i++){
+        // On n'affiche que le nom
+        printf(" - %s\n", actions[i].name);
+    }
 
-            printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
-            for(int i=0; i<actionCount; i++){
-                // On n'affiche que le nom
-                printf(" - %s\n", actions[i].name);
-            }
+    // Lancement BFS
+    int solIndex = bfs(&initial, &goal, actions, actionCount);
+    if(solIndex == -1) {
+        printf("\nAucune solution trouvee.\n\n");
+    } else {
+        reconstructPlan(solIndex, actions);
+    }
+}
 
-            // Lancement BFS
-            int solIndex = bfs(&initial, &goal, actions, actionCount);
-            if(solIndex == -1) {
-                printf("\nAucune solution trouvee.\n\n");
-            } else {
-                reconstructPlan(solIndex, actions);
-            }
-        } 
-        else if(choix == 2) {
-            // Fichier personnalise
-            char nomFichier[MAX_LEN];
-            demanderTexte("Entrez le nom du fichier a utiliser : ", nomFichier, MAX_LEN);
+void choixDeux(){
+    // Fichier personnalise
+    char nomFichier[MAX_LEN];
+    demanderTexte("Entrez le nom du fichier a utiliser : ", nomFichier, MAX_LEN);
 
-            State initial;
-            Goal goal;
-            Action actions[MAX_ACTIONS];
-            int actionCount = 0;
+    State initial;
+    Goal goal;
+    Action actions[MAX_ACTIONS];
+    int actionCount = 0;
 
-            if(!parseFile(nomFichier, &initial, &goal, actions, &actionCount)) {
-                continue; 
-            }
+    if(!parseFile(nomFichier, &initial, &goal, actions, &actionCount)) {
+        //erreur
+    }
 
-            // Affichage (uniquement nb de faits start, finish, nb d'actions, noms)
-            printf("\n=== ETAT INITIAL (START) ===\n");
-            printf("Nombre de faits: %d\n", initial.factCount);
-            for(int i=0; i<initial.factCount; i++){
-                printf(" - %s\n", initial.facts[i]);
-            }
+    // Affichage (uniquement nb de faits start, finish, nb d'actions, noms)
+    printf("\n=== ETAT INITIAL (START) ===\n");
+    printf("Nombre de faits: %d\n", initial.factCount);
+    for(int i=0; i<initial.factCount; i++){
+        printf(" - %s\n", initial.facts[i]);
+    }
 
-            printf("\n=== OBJECTIF (FINISH) ===\n");
-            printf("Nombre de faits: %d\n", goal.factCount);
-            for(int i=0; i<goal.factCount; i++){
-                printf(" - %s\n", goal.facts[i]);
-            }
+    printf("\n=== OBJECTIF (FINISH) ===\n");
+    printf("Nombre de faits: %d\n", goal.factCount);
+    for(int i=0; i<goal.factCount; i++){
+        printf(" - %s\n", goal.facts[i]);
+    }
 
-            printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
-            for(int i=0; i<actionCount; i++){
-                printf(" - %s\n", actions[i].name);
-            }
+    printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
+    for(int i=0; i<actionCount; i++){
+        printf(" - %s\n", actions[i].name);
+    }
 
-            // BFS
-            int solIndex = bfs(&initial, &goal, actions, actionCount);
-            if(solIndex == -1) {
-                printf("\nAucune solution trouvee.\n\n");
-            } else {
-                reconstructPlan(solIndex, actions);
-            }
-        }
-        else if(choix == 3) {
-            // Creer un nouveau fichier
+    // BFS
+    int solIndex = bfs(&initial, &goal, actions, actionCount);
+    if(solIndex == -1) {
+        printf("\nAucune solution trouvee.\n\n");
+    } else {
+        reconstructPlan(solIndex, actions);
+    }
+}
+
+void choixTrois(){
+  // Creer un nouveau fichier
             char nomFichier[MAX_LEN];
             if(!creerFichier(nomFichier)) {
-                continue; // echec creation
+               // echec creation
             }
             // Proposition de verification immediate
             printf("Voulez-vous tester la resolution sur ce fichier ? (o/n) ");
@@ -542,11 +533,36 @@ int main() {
                 printf("Ok, fichier cree, pas de verification. Retour au menu.\n");
             }
         }
-        else {
-            printf("Choix invalide.\n");
+
+// ---------------------------------------------------------------------
+// 7) Programme principal
+// ---------------------------------------------------------------------
+int main() {
+    int choix=0;
+
+    // Affichage ASCII
+    afficherEnteteASCII();
+
+    while (choix != 4){
+        choix = afficherMenu();
+
+        switch (choix) {
+            case 1:
+                choixUn();
+            break;
+            case 2:
+                choixDeux();
+            break;
+            case 3:
+                choixTrois();
+            break;
+            case 4:
+                printf("Au revoir !\n");
+            break;
+            default:
+                printf("Choix invalide.\n");
         }
     }
 
     return 0;
 }
-
