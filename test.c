@@ -403,15 +403,13 @@ int creerFichier(char* nomFichier) {
     return 1;
 }
 
-void choixUn(){
-    // Fichier par defaut : monkeys.txt
-    const char* defaultFile = "monkeys.txt";
+void trucDeBase(const char *nomfile) {
     State initial;
     Goal goal;
     Action actions[MAX_ACTIONS];
     int actionCount = 0;
 
-    if(!parseFile(defaultFile, &initial, &goal, actions, &actionCount)) {
+    if(!parseFile(nomfile, &initial, &goal, actions, &actionCount)) {
         // erreur
     }
 
@@ -443,45 +441,34 @@ void choixUn(){
     }
 }
 
+void choixUn(){
+    // Fichier par defaut : monkeys.txt
+    const char* defaultFile = "monkeys.txt";
+
+    trucDeBase(defaultFile);
+
+
+}
+
 void choixDeux(){
     // Fichier personnalise
     char nomFichier[MAX_LEN];
-    demanderTexte("Entrez le nom du fichier a utiliser : ", nomFichier, MAX_LEN);
+    printf("Entrez le nom du fichier a utiliser : ");
+    scanf("%s", nomFichier);
 
-    State initial;
-    Goal goal;
-    Action actions[MAX_ACTIONS];
-    int actionCount = 0;
+    // Debug: Print the file name
+    printf("Nom du fichier saisi : %s\n", nomFichier);
 
-    if(!parseFile(nomFichier, &initial, &goal, actions, &actionCount)) {
-        //erreur
+    // Check if the file exists (optional, depends on your environment)
+    FILE *file = fopen(nomFichier, "r");
+    if (file == NULL) {
+        printf("Erreur : Le fichier %s n'existe pas ou n'est pas accessible.\n", nomFichier);
+        return;
     }
+    fclose(file);
 
-    // Affichage (uniquement nb de faits start, finish, nb d'actions, noms)
-    printf("\n=== ETAT INITIAL (START) ===\n");
-    printf("Nombre de faits: %d\n", initial.factCount);
-    for(int i=0; i<initial.factCount; i++){
-        printf(" - %s\n", initial.facts[i]);
-    }
+    trucDeBase(nomFichier);
 
-    printf("\n=== OBJECTIF (FINISH) ===\n");
-    printf("Nombre de faits: %d\n", goal.factCount);
-    for(int i=0; i<goal.factCount; i++){
-        printf(" - %s\n", goal.facts[i]);
-    }
-
-    printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
-    for(int i=0; i<actionCount; i++){
-        printf(" - %s\n", actions[i].name);
-    }
-
-    // BFS
-    int solIndex = bfs(&initial, &goal, actions, actionCount);
-    if(solIndex == -1) {
-        printf("\nAucune solution trouvee.\n\n");
-    } else {
-        reconstructPlan(solIndex, actions);
-    }
 }
 
 void choixTrois(){

@@ -16,7 +16,7 @@ typedef struct Global {
 };
 
 // Fonction pour afficher le contenue du ficher
-void aff(const char* nomFichier) {
+void Affiche(const char* nomFichier) {
 
     char c;
 
@@ -43,14 +43,13 @@ void Struct_Dyna(int NB_ACTION) {
             char preconds [100];
             char add [100];
             char delete[100];
-
         };
     }
 }
 
 int main() {
     const char* nomFichier = "monkeys.txt";
-    aff(nomFichier);
+    Affiche(nomFichier);
 
     return 0;
 }
