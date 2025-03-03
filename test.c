@@ -403,6 +403,8 @@ int creerFichier(char* nomFichier) {
     return 1;
 }
 
+//// Fonction qui analyse le fichier passer en parametre
+///sans retour
 void trucDeBase(const char *nomfile) {
     State initial;
     Goal goal;
@@ -445,9 +447,8 @@ void choixUn(){
     // Fichier par defaut : monkeys.txt
     const char* defaultFile = "monkeys.txt";
 
+    // Appele de fonction
     trucDeBase(defaultFile);
-
-
 }
 
 void choixDeux(){
@@ -456,10 +457,9 @@ void choixDeux(){
     printf("Entrez le nom du fichier a utiliser : ");
     scanf("%s", nomFichier);
 
-    // Debug: Print the file name
+    // Debug : print le nom du ficher
     printf("Nom du fichier saisi : %s\n", nomFichier);
 
-    // Check if the file exists (optional, depends on your environment)
     FILE *file = fopen(nomFichier, "r");
     if (file == NULL) {
         printf("Erreur : Le fichier %s n'existe pas ou n'est pas accessible.\n", nomFichier);
@@ -467,6 +467,7 @@ void choixDeux(){
     }
     fclose(file);
 
+    // Appele de fonction
     trucDeBase(nomFichier);
 
 }
