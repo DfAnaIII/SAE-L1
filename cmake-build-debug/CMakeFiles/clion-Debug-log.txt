@@ -1,0 +1,4 @@
+/Users/anaderfurth/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" -S /Users/anaderfurth/CLionProjects/SAE(L1 -B /Users/anaderfurth/CLionProjects/SAE(L1/cmake-build-debug
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/anaderfurth/CLionProjects/SAE(L1/cmake-build-debug
