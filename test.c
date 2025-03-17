@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
 
 // ---------------------------------------------------------------------
 // Configuration / limites
@@ -350,6 +351,20 @@ void DemanderTexte(const char* question, char* buffer, int bufferSize) {
     buffer[strcspn(buffer, "\r\n")] = '\0';
 }
 
+
+void creationRegle(){
+    // Cree un fichier de règles 
+    // start:...
+    // finish:...
+    // puis un certain nombre d'actions, chacune separee par ****
+    // action:...
+    // preconds:...
+    // add:...
+    // delete:...
+
+
+}
+
 // Cree un fichier en format correct
 // start:...
 // finish:...
@@ -532,6 +547,8 @@ void ChoixCréationFichierUtilisateur(){
 // ---------------------------------------------------------------------
 int main() {
     int choix=0;
+    time_t begin = time( NULL );
+
 
     AfficherEnteteASCII();
 
