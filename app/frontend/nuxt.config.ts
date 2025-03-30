@@ -10,7 +10,6 @@ export default defineNuxtConfig({
     '@nuxt/scripts',
     '@nuxt/test-utils',
     '@nuxt/eslint',
-    '@nuxt/content',
     'shadcn-nuxt'
   ],
   
@@ -30,6 +29,33 @@ export default defineNuxtConfig({
        * @default "./components/ui"
        */
       componentDir: './components/ui'
-    }
+    },
 
+  runtimeConfig: {
+    public: {
+      apiUrl: process.env.API_URL || 'http://localhost:4000',
+      cloudflareSiteKey: process.env.CLOUDFLARE_SITE_KEY
+    }
+  },
+
+  app: {
+    head: {
+      script: [
+        {
+          src: 'https://challenges.cloudflare.com/turnstile/v0/api.js',
+          async: true,
+          defer: true
+        }
+      ]
+    }
+  },
+
+  nitro: {
+    routeRules: {
+      '/challenge': { appMiddleware: { auth: false } },
+      '/**': { appMiddleware: ['auth'] }
+    }
+  },
+
+  content: false
 })
