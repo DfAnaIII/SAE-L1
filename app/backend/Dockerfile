@@ -1,31 +1,28 @@
-# Utilisation de l'image Node.js officielle
 FROM node:18-alpine
 
-# Création du répertoire de travail
-WORKDIR /usr/src/app
+# Installation de gcc et des dépendances nécessaires
+RUN apk add --no-cache gcc musl-dev
 
-# Installation des dépendances Node.js
+WORKDIR /app
+
+# Copier les fichiers de configuration
 COPY package*.json ./
 
-# Installation des dépendances
-RUN npm install --omit=dev
+# Installer les dépendances
+RUN npm install
 
-# Copie du code source
+# Copier le code source
 COPY . .
 
-# Création du dossier logs
-RUN mkdir -p logs
+# Créer le dossier pour les scripts C
+RUN mkdir -p src/scripts
 
-# Exposition du port
-EXPOSE 3000
+# Compiler les scripts C
+RUN gcc src/scripts/main.c -o main && \
+    gcc src/scripts/verify.c -o verify
 
-# Variables d'environnement par défaut
-ENV NODE_ENV=production \
-    PORT=3000
+# Exposer le port
+EXPOSE 4000
 
-# Ajout du healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
-
-# Commande de démarrage
-CMD ["node", "src/server.js"]
+# Démarrer l'application
+CMD ["npm", "start"]
