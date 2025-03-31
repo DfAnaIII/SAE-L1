@@ -23,7 +23,8 @@
     "vue-sonner": "^1.2.0",
     "@nuxt/fonts": "^0.1.0",
     "@nuxt/icon": "^1.11.0",
-    "@nuxt/scripts": "^0.1.0"
+    "@nuxt/scripts": "^0.1.0",
+    "@nuxt/kit": "^3.10.3"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
