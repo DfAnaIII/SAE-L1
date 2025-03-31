@@ -17,9 +17,13 @@
     "lucide-vue-next": "^0.344.0",
     "nuxt": "^3.10.3",
     "radix-vue": "^1.5.3",
+    "shadcn-vue": "^0.8.0",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
-    "vue-sonner": "^1.2.0"
+    "vue-sonner": "^1.2.0",
+    "@nuxt/fonts": "^0.1.0",
+    "@nuxt/icon": "^0.6.1",
+    "@nuxt/scripts": "^0.1.0"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
