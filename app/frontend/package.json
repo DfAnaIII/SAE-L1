@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
-    "@nuxtjs/eslint-config": "^11.0.0",
+    "@nuxtjs/eslint-config": "^10.0.0",
     "@types/node": "^20.11.19",
     "autoprefixer": "^10.4.17",
     "eslint": "^8.56.0",
