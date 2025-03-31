@@ -40,22 +40,5 @@ export default defineNuxtConfig({
     }
   },
 
-  components: {
-    dirs: [
-      {
-        path: '~/components',
-        pathPrefix: false,
-        global: true
-      },
-      {
-        path: '~/components/ui',
-        prefix: 'Ui',
-        pathPrefix: false
-      }
-    ]
-  },
 
-  build: {
-    transpile: ['vue-sonner']
-  }
 });
