@@ -22,7 +22,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vue-sonner": "^1.2.0",
     "@nuxt/fonts": "^0.1.0",
-    "@nuxt/icon": "^0.6.1",
+    "@nuxt/icon": "^1.11.0",
     "@nuxt/scripts": "^0.1.0"
   },
   "devDependencies": {
