@@ -55,7 +55,5 @@ export default defineNuxtConfig({
       '/challenge': { appMiddleware: { auth: false } },
       '/**': { appMiddleware: ['auth'] }
     }
-  },
-
-  content: false
+  }
 })
