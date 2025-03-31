@@ -5,7 +5,6 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxtjs/tailwindcss',
-    '@nuxt/eslint',
     'shadcn-nuxt'
   ],
   
