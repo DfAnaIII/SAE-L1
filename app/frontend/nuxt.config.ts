@@ -1,34 +1,16 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
-
-  modules: [
-    '@nuxtjs/tailwindcss',
-    'shadcn-nuxt'
-  ],
+  modules: ['@nuxtjs/tailwindcss'],
   
   tailwindcss: {
     exposeConfig: true,
-    viewer: true,
-    // and more...
+    viewer: true
   },
-
-  shadcn: {
-      /**
-       * Prefix for all the imported component
-       */
-      prefix: '',
-      /**
-       * Directory that the component lives in.
-       * @default "./components/ui"
-       */
-      componentDir: './components/ui'
-    },
 
   runtimeConfig: {
     public: {
-      apiUrl: process.env.API_URL || 'http://localhost:4000',
+      apiUrl: process.env.API_URL || 'http://localhost:4040',
       cloudflareSiteKey: process.env.CLOUDFLARE_SITE_KEY
     }
   },
@@ -51,4 +33,4 @@ export default defineNuxtConfig({
       '/**': { appMiddleware: ['auth'] }
     }
   }
-})
+});
