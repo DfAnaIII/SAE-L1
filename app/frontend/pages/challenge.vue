@@ -37,8 +37,7 @@
                 <CardContent>
                     <div class="flex flex-col items-center justify-center space-y-6">
                         <div class="w-full h-[400px] bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                            <!-- Intégration du challenge Cloudflare -->
-                            <div id="cf-turnstile" class="mx-auto"></div>
+                            <NuxtTurnstile v-model="token" @verify="handleVerify" />
                         </div>
                         <p class="text-center text-gray-600 dark:text-gray-400">
                             Veuillez compléter le challenge de sécurité pour accéder à l'application.
@@ -53,20 +52,19 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { onMounted, onBeforeMount } from 'vue'
+import { onMounted, onBeforeMount, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useStorage } from '@vueuse/core'
 
 const router = useRouter()
-const { $turnstile, $localStorage } = useNuxtApp()
+const token = ref<string>('')
 
 // Vérification de la session au chargement de la page
 onBeforeMount(async () => {
-    if (process.client) {
-        const sessionId = $localStorage.getItem('sessionId')
+    if (import.meta.client) {
+        const sessionId = localStorage.getItem('sessionId')
         if (sessionId) {
             try {
-                const response = await fetch(`${useRuntimeConfig().public.apiUrl}/check`, {
+                const response = await fetch(`${useRuntimeConfig().public.apiUrl}/session/check`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -76,6 +74,9 @@ onBeforeMount(async () => {
                 
                 if (response.ok) {
                     router.push('/')
+                } else {
+                    // Si la session est invalide, on la supprime
+                    localStorage.removeItem('sessionId')
                 }
             } catch (error) {
                 console.error('Erreur lors de la vérification de la session:', error)
@@ -84,30 +85,25 @@ onBeforeMount(async () => {
     }
 })
 
-// Initialisation du challenge Cloudflare
-onMounted(() => {
-    $turnstile.render('#cf-turnstile', {
-        callback: async (token: string) => {
-            try {
-                const response = await fetch(`${useRuntimeConfig().public.apiUrl}/verify-challenge`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ token })
-                })
-                
-                if (response.ok) {
-                    const { sessionId } = await response.json()
-                    $localStorage.setItem('sessionId', sessionId)
-                    router.push('/')
-                }
-            } catch (error) {
-                console.error('Erreur lors de la vérification du challenge:', error)
-            }
+const handleVerify = async (token: string) => {
+    try {
+        const response = await fetch(`${useRuntimeConfig().public.apiUrl}/_turnstile/validate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token })
+        })
+        
+        if (response.ok) {
+            const { sessionId } = await response.json()
+            localStorage.setItem('sessionId', sessionId)
+            router.push('/')
         }
-    })
-})
+    } catch (error) {
+        console.error('Erreur lors de la vérification du challenge:', error)
+    }
+}
 
 function toggleTheme() {
     const theme = document.documentElement.getAttribute('class');

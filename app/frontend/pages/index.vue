@@ -6,7 +6,7 @@
 
       <!-- Titre centré -->
       <div class="flex text-center tracking-tighter text-2xl font-bold py-8">
-        <h1>SAE - Projet :<br> A    na D'erfurth et SILVA Florian</h1>
+        <h1>SAE - Projet :<br> Ana D'erfurth et SILVA Florian</h1>
       </div>
 
       <!-- Boutons à droite -->
