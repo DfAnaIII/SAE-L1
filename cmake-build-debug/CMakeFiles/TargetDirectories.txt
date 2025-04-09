@@ -1,3 +1,0 @@
-/Users/anaderfurth/CLionProjects/SAE(L1/cmake-build-debug/CMakeFiles/SAE_L1.dir
-/Users/anaderfurth/CLionProjects/SAE(L1/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/anaderfurth/CLionProjects/SAE(L1/cmake-build-debug/CMakeFiles/rebuild_cache.dir

@@ -12,6 +12,8 @@ const addContent = require('./routes/addContent.js');
 const getContent = require('./routes/getContent.js');
 const updateContent = require('./routes/updateContent.js');
 const deleteContent = require('./routes/deleteContent.js');
+const turnstileRouter = require('./routes/turnstile.js');
+const sessionRouter = require('./routes/session.js');
 
 // Création de l'application Express
 const app = express();
@@ -92,6 +94,13 @@ app.use((req, res, next) => {
     }
 });
 
+// Routes
+app.use('/add', addContent);
+app.use('/get', getContent);
+app.use('/update', updateContent);
+app.use('/delete', deleteContent);
+app.use('/_turnstile', turnstileRouter);
+app.use('/session', sessionRouter);
 
 // Gestion des routes non trouvées
 app.all('*', (req, res) => {
