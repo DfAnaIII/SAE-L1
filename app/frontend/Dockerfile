@@ -13,7 +13,8 @@ RUN npm install
 COPY . .
 
 # S'assurer que nous avons les plugins PostCSS nécessaires pour Tailwind
-RUN npm install -D tailwindcss postcss autoprefixer
+RUN npm uninstall tailwindcss postcss autoprefixer
+RUN npm install -D tailwindcss@latest @tailwindcss/postcss7-compat postcss@^8.0.0 autoprefixer@^10.0.0
 
 # Construire l'application
 RUN npm run build
