@@ -293,7 +293,7 @@ int main() {
     int steps = 0;             // Compteur d'étapes
 
     // Charger le problème depuis le fichier
-    if(!loadProblemFile("assets/monkey.txt", &currentState, &goal, actions, &actionCount)) {
+    if(!loadProblemFile("../../assets/monkey.txt", &currentState, &goal, actions, &actionCount)) {
         return EXIT_FAILURE;
     }
 
