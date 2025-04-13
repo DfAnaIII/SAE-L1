@@ -6,6 +6,7 @@
 #define MAX_MOTS 50
 #define MAX_REGLES 100
 #define MAX_ETATS 1000
+#define MAX_CHEMIN 100
 
 typedef char string[50];
 
@@ -154,24 +155,254 @@ void afficherSolution(Etat etats[], Regle regles[], int indice_solution) {
         indice = etats[indice].parent;
     }
     
-    printf("\nSolution trouvée (%d étapes):\n", longueur);
+    printf("\n+------------------PLAN TROUVE------------------+\n|\n");
+    printf("| Solution trouvée (%d étapes):\n", longueur);
     for(int i = longueur - 1; i >= 0; i--) {
         int regle = etats[chemin[i]].regle_appliquee;
-        printf("- %s\n", regles[regle].action);
+        printf("| - %s\n", regles[regle].action);
+    }
+    printf("|\n+------------------FIN DU PLAN------------------+\n\n");
+}
+
+/**
+ * Fonction pour diviser une chaîne en utilisant le délimiteur et supprimer les espaces
+ */
+void diviserChaine(const char *chaine, char delim, string resultat[], int *nb_elements) {
+    *nb_elements = 0;
+    char buffer[MAX_LIGNE];
+    strcpy(buffer, chaine);
+    
+    char *token = strtok(buffer, &delim);
+    while(token != NULL && *nb_elements < MAX_MOTS) {
+        // Supprimer les espaces en début et fin
+        char *debut = token;
+        while(*debut == ' ' || *debut == '\t') debut++;
+        
+        char *fin = token + strlen(token) - 1;
+        while(fin > debut && (*fin == ' ' || *fin == '\t')) {
+            *fin = '\0';
+            fin--;
+        }
+        
+        if(strlen(debut) > 0) {
+            strcpy(resultat[(*nb_elements)++], debut);
+        }
+        
+        token = strtok(NULL, &delim);
     }
 }
 
-int main() {
-    Regle regles[MAX_REGLES];
+/**
+ * Fonction pour charger un fichier au format spécifié
+ */
+int chargerFichierFormat(const char *fichier, string faits_initiaux[], int *nb_faits, 
+                         string buts[], int *nb_buts, Regle regles[], int *nb_regles) {
+    FILE *f = fopen(fichier, "r");
+    if(!f) {
+        printf("Erreur: impossible d'ouvrir le fichier %s\n", fichier);
+        return 0;
+    }
+    
+    char ligne[MAX_LIGNE];
+    *nb_regles = 0;
+    *nb_faits = 0;
+    *nb_buts = 0;
+    
+    Regle regle_courante;
+    int dans_action = 0;
+    
+    while(fgets(ligne, MAX_LIGNE, f)) {
+        // Supprimer le retour à la ligne
+        ligne[strcspn(ligne, "\r\n")] = 0;
+        
+        // Ligne vide ou trop courte
+        if(strlen(ligne) <= 1) continue;
+        
+        // Séparateur d'actions
+        if(strncmp(ligne, "****", 4) == 0) {
+            if(dans_action) {
+                // Enregistrer la règle précédente
+                regles[(*nb_regles)++] = regle_courante;
+            }
+            dans_action = 1;
+            // Initialiser une nouvelle règle
+            memset(&regle_courante, 0, sizeof(Regle));
+            continue;
+        }
+        
+        // Parser selon le type de ligne
+        if(strncmp(ligne, "start:", 6) == 0) {
+            diviserChaine(ligne + 6, ',', faits_initiaux, nb_faits);
+        }
+        else if(strncmp(ligne, "finish:", 7) == 0) {
+            diviserChaine(ligne + 7, ',', buts, nb_buts);
+        }
+        else if(dans_action) {
+            if(strncmp(ligne, "action:", 7) == 0) {
+                strcpy(regle_courante.action, ligne + 7);
+            }
+            else if(strncmp(ligne, "preconds:", 9) == 0) {
+                diviserChaine(ligne + 9, ',', regle_courante.preconds, &regle_courante.nb_preconds);
+            }
+            else if(strncmp(ligne, "add:", 4) == 0) {
+                diviserChaine(ligne + 4, ',', regle_courante.adds, &regle_courante.nb_adds);
+            }
+            else if(strncmp(ligne, "delete:", 7) == 0) {
+                diviserChaine(ligne + 7, ',', regle_courante.deletes, &regle_courante.nb_deletes);
+            }
+        }
+    }
+    
+    // Enregistrer la dernière règle si elle existe
+    if(dans_action) {
+        regles[(*nb_regles)++] = regle_courante;
+    }
+    
+    fclose(f);
+    return 1;
+}
+
+/**
+ * Fonction pour afficher l'entête ASCII
+ */
+void afficherEnteteASCII() {
+    printf("+----------------------------------------------+\n");
+    printf("|                                              |\n");
+    printf("|         GPS avec Backtracking (Part 3)       |\n");
+    printf("|                                              |\n");
+    printf("+----------------------------------------------+\n\n");
+}
+
+/**
+ * Fonction pour afficher le menu principal
+ */
+int afficherMenu() {
+    printf("\n+---------------------------------------------------+\n");
+    printf("|                                                   |\n");
+    printf("|                 Menu principal :                  |\n");
+    printf("|                                                   |\n");
+    printf("|  1) Utiliser le fichier par défaut (monkey.txt)   |\n");
+    printf("|  2) Indiquer un fichier personnalisé              |\n");
+    printf("|  3) Créer un nouveau fichier                      |\n");
+    printf("|  0) Quitter                                       |\n");
+    printf("|                                                   |\n");
+    printf("+---------------------------------------------------+\n");
+    printf("Votre choix : ");
+    int choix;
+    scanf("%d", &choix);
+    getchar(); // Pour capturer le retour à la ligne
+    return choix;
+}
+
+/**
+ * Fonction pour vider le buffer d'entrée
+ */
+void viderBuffer() {
+    int c;
+    while ((c = getchar()) != EOF && c != '\n');
+}
+
+/**
+ * Fonction pour demander un texte à l'utilisateur
+ */
+void demanderTexte(const char *question, char *buffer, int bufferSize) {
+    printf("%s", question);
+    fgets(buffer, bufferSize, stdin);
+    // Enlever le retour à la ligne
+    buffer[strcspn(buffer, "\r\n")] = 0;
+}
+
+/**
+ * Fonction pour créer un nouveau fichier au format approprié
+ */
+int creerFichier() {
+    char nomFichier[MAX_CHEMIN];
+    
+    printf("Entrez le nom du fichier à créer (ex: monFichier.txt) : ");
+    fgets(nomFichier, MAX_CHEMIN, stdin);
+    nomFichier[strcspn(nomFichier, "\r\n")] = 0;
+    
+    char cheminComplet[MAX_CHEMIN * 2];
+    snprintf(cheminComplet, sizeof(cheminComplet), "assets/%s", nomFichier);
+    
+    FILE *fp = fopen(cheminComplet, "w");
+    if(!fp) {
+        printf("Impossible de créer le fichier '%s'.\n", cheminComplet);
+        return 0;
+    }
+    
+    char buf[MAX_LIGNE];
+    demanderTexte("Entrez les conditions initiales (séparées par des virgules):\n> ", buf, MAX_LIGNE);
+    fprintf(fp, "start:%s\n", buf);
+    
+    demanderTexte("Entrez les conditions d'arrivée (finish), séparées par des virgules:\n> ", buf, MAX_LIGNE);
+    fprintf(fp, "finish:%s\n", buf);
+    
+    int nbActions = 0;
+    printf("Combien d'actions voulez-vous saisir ? ");
+    scanf("%d", &nbActions);
+    getchar(); // Pour capturer le retour à la ligne
+    
+    for(int i = 0; i < nbActions; i++) {
+        fprintf(fp, "****\n");
+        
+        // Action (nom)
+        demanderTexte("\nNom de l'action : ", buf, MAX_LIGNE);
+        fprintf(fp, "action:%s\n", buf);
+        
+        // Préconditions
+        demanderTexte("Préconditions (séparées par des virgules) : ", buf, MAX_LIGNE);
+        fprintf(fp, "preconds:%s\n", buf);
+        
+        // Faits ajoutés
+        demanderTexte("Faits ajoutés (séparés par des virgules) : ", buf, MAX_LIGNE);
+        fprintf(fp, "add:%s\n", buf);
+        
+        // Faits supprimés
+        demanderTexte("Faits supprimés (séparés par des virgules) : ", buf, MAX_LIGNE);
+        fprintf(fp, "delete:%s\n", buf);
+    }
+    
+    fclose(fp);
+    printf("\nFichier '%s' créé avec succès dans le dossier 'assets'.\n", nomFichier);
+    return 1;
+}
+
+/**
+ * Fonction pour analyser et résoudre un problème depuis un fichier
+ */
+void analyseFichier(const char *nomFichier) {
     string faits_initiaux[MAX_MOTS];
     string buts[MAX_MOTS];
-    Etat etats[MAX_ETATS];
-    int nb_etats = 1;
+    Regle regles[MAX_REGLES];
+    int nb_faits = 0, nb_buts = 0, nb_regles = 0;
     
-    // Chargement des données
-    int nb_regles = chargerRegles("assets/regles.txt", regles);
-    int nb_faits = chargerFaits("assets/faits.txt", faits_initiaux);
-    int nb_buts = chargerFaits("assets/buts.txt", buts);
+    if(!chargerFichierFormat(nomFichier, faits_initiaux, &nb_faits, buts, &nb_buts, regles, &nb_regles)) {
+        return; // Erreur déjà affichée
+    }
+    
+    // Affichage des faits initiaux
+    printf("\n+----------ETAT INITIAL (START)----------+\n|\n");
+    printf("| Nombre de faits: %d\n", nb_faits);
+    for(int i = 0; i < nb_faits; i++) {
+        printf("| - %s\n", faits_initiaux[i]);
+    }
+    printf("|\n+----------------------------------------+\n");
+    
+    // Affichage des buts
+    printf("\n+----------OBJECTIF (FINISH)----------+\n|\n");
+    printf("| Nombre de faits: %d\n", nb_buts);
+    for(int i = 0; i < nb_buts; i++) {
+        printf("| - %s\n", buts[i]);
+    }
+    printf("|\n+-------------------------------------+\n");
+    
+    // Affichage des actions
+    printf("\n+----------ACTIONS DISPONIBLES (%d)----------+\n|\n", nb_regles);
+    for(int i = 0; i < nb_regles; i++) {
+        printf("| - %s\n", regles[i].action);
+    }
+    printf("|\n+-------------------------------------------+\n");
     
     // Initialisation des indices des règles
     for(int i = 0; i < nb_regles; i++) {
@@ -179,6 +410,9 @@ int main() {
     }
     
     // Initialisation de l'état initial
+    Etat etats[MAX_ETATS];
+    int nb_etats = 1;
+    
     etats[0].nb_faits = nb_faits;
     etats[0].parent = -1;
     etats[0].regle_appliquee = -1;
@@ -194,6 +428,85 @@ int main() {
     
     printf("\nStatistiques:\n");
     printf("- Nombre d'états explorés: %d\n", nb_etats);
+}
+
+/**
+ * Fonction pour utiliser le fichier par défaut
+ */
+void choixFichierParDefaut() {
+    const char *fichierDefaut = "assets/monkey.txt";
+    analyseFichier(fichierDefaut);
+}
+
+/**
+ * Fonction pour choisir un fichier personnalisé
+ */
+void choixFichierUtilisateur() {
+    char nomFichier[MAX_CHEMIN];
+    
+    printf("Entrez le nom du fichier à utiliser : ");
+    fgets(nomFichier, MAX_CHEMIN, stdin);
+    nomFichier[strcspn(nomFichier, "\r\n")] = 0;
+    
+    char cheminComplet[MAX_CHEMIN * 2];
+    snprintf(cheminComplet, sizeof(cheminComplet), "assets/%s", nomFichier);
+    
+    FILE *file = fopen(cheminComplet, "r");
+    if(file == NULL) {
+        printf("Erreur : Le fichier %s n'existe pas ou n'est pas accessible.\n", cheminComplet);
+        return;
+    }
+    fclose(file);
+    
+    analyseFichier(cheminComplet);
+}
+
+int main() {
+    afficherEnteteASCII();
+    
+    int choix = -1;
+    while(choix != 0) {
+        choix = afficherMenu();
+        
+        switch(choix) {
+            case 0:
+                printf("Au revoir !\n");
+                break;
+            case 1:
+                choixFichierParDefaut();
+                break;
+            case 2:
+                choixFichierUtilisateur();
+                break;
+            case 3:
+                if(creerFichier()) {
+                    printf("Voulez-vous tester ce fichier maintenant ? (o/n) ");
+                    char reponse[2];
+                    fgets(reponse, 2, stdin);
+                    viderBuffer();
+                    
+                    if(reponse[0] == 'o' || reponse[0] == 'O') {
+                        // Demander le nom
+                        char nomFichier[MAX_CHEMIN];
+                        printf("Entrez à nouveau le nom du fichier : ");
+                        fgets(nomFichier, MAX_CHEMIN, stdin);
+                        nomFichier[strcspn(nomFichier, "\r\n")] = 0;
+                        
+                        char cheminComplet[MAX_CHEMIN * 2];
+                        snprintf(cheminComplet, sizeof(cheminComplet), "assets/%s", nomFichier);
+                        analyseFichier(cheminComplet);
+                    }
+                }
+                break;
+            default:
+                printf("Choix invalide.\n");
+        }
+        
+        if(choix != 0) {
+            printf("\nAppuyez sur Entrée pour continuer...");
+            getchar();
+        }
+    }
     
     return 0;
 }

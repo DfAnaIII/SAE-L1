@@ -1,568 +1,421 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+#include <stdlib.h>
 
-// ---------------------------------------------------------------------
-// Configuration / limites
-// ---------------------------------------------------------------------
-#define MAX_LEN      256   // Taille max d'une ligne
-#define MAX_FACTS    20    // Nombre max de "faits" qu'on stocke dans un état
-#define MAX_ACTIONS  50    // Nombre max d'actions
-#define MAX_STATES   1000  // Nombre max d'états visités lors du BFS
+#define MAX_LIGNE 256
+#define MAX_MOTS 50
+#define MAX_REGLES 100
+#define MAX_ETATS 1000
 
-// ---------------------------------------------------------------------
-// Structures de base
-// ---------------------------------------------------------------------
+typedef char string[50];
 
-// Un état est un ensemble de faits
+/**
+ * Structure représentant une règle du système GPS
+ */
 typedef struct {
-    int factCount;
-    char facts[MAX_FACTS][MAX_LEN];
-} State;
+    string action;
+    string preconds[MAX_MOTS];
+    string adds[MAX_MOTS];
+    string deletes[MAX_MOTS];
+    int nb_preconds;
+    int nb_adds;
+    int nb_deletes;
+    int indice;  // Indice de la règle dans le tableau des règles
+} Regle;
 
-// L'objectif (finish) est un ensemble de faits (même structure que State)
-typedef State Goal;
-
-// Chaque action a un nom, des préconditions, une liste de faits ajoutés, une liste de faits supprimés
+/**
+ * Structure représentant un état du système avec mémoire
+ */
 typedef struct {
-    char name[MAX_LEN];
-    State preconds;
-    State addList;
-    State delList;
-} Action;
+    string faits[MAX_MOTS];
+    int nb_faits;
+    int regle_appliquee;  // Indice de la règle qui a mené à cet état
+    int parent;           // Indice de l'état parent
+} Etat;
 
-// Pour la BFS, on utilise un tableau "visited" : on stocke des "noeuds"
-// (un état + un lien vers le parent + l'action qui y mène)
-typedef struct {
-    State state;            
-    int parent;             // index du noeud parent dans visited[]
-    int actionFromParent;   // index de l'action utilisée pour arriver ici
-} Node;
-
-// ---------------------------------------------------------------------
-// Variables globales (pour simplifier l'implémentation BFS)
-// ---------------------------------------------------------------------
-Node visited[MAX_STATES];  // Stocke tous les états "visités"
-int visitedCount = 0;      // Nombre d'états différents visités
-int queueArray[MAX_STATES];// File d'indices (vers visited[])
-int front = 0;             // Indice de lecture de la file
-int rear = 0;              // Indice d'écriture de la file
-
-// ---------------------------------------------------------------------
-// 1) Affichage ASCII de présentation
-// ---------------------------------------------------------------------
-void afficherEnteteASCII() {
-    printf("+----------------------------------------------+\n");
-    printf("|                                              |\n");
-    printf("|      Projet GPS (General Problem Solver)     |\n");
-    printf("|                                              |\n");
-    printf("|   Fait par Florian SILVA et Ana D'Erfurth    |\n");
-    printf("|                                              |\n");
-    printf("+----------------------------------------------+\n\n");
-}
-
-// ---------------------------------------------------------------------
-// 2) Menu principal
-// ---------------------------------------------------------------------
-int afficherMenu() {
-    printf("+---------------------------------------------------+\n");
-    printf("|                                                   |\n");
-    printf("|                 Menu principal :                  |\n");
-    printf("|                                                   |\n");
-    printf("|  1) Utiliser le fichier par defaut (monkeys.txt)  |\n");
-    printf("|  2) Indiquer un fichier personnalise              |\n");
-    printf("|  3) Creer un nouveau fichier                      |\n");
-    printf("|  0) Quitter                                       |\n");
-    printf("|                                                   |\n");
-    printf("+---------------------------------------------------+\n");
-    printf("Votre choix : ");
-    int choix;
-    scanf("%d", &choix);
-    return choix;
-}
-
-// ---------------------------------------------------------------------
-// Fonctions utilitaires pour la gestion des faits, de l'etat, etc.
-// ---------------------------------------------------------------------
-
-// Trim : retire les espaces en debut et en fin de chaine
-void trim(char* str) {
-    // Enlever espaces en debut
-    while(*str == ' ' || *str == '\t') {
-        memmove(str, str+1, strlen(str));
-    }
-    // Enlever espaces en fin
-    char* end = str + strlen(str) - 1;
-    while(end > str && (*end == ' ' || *end == '\t')) {
-        *end = '\0';
-        end--;
-    }
-}
-
-// Decoupe une ligne en morceaux separes par des virgules, stocke dans un State
-void splitFacts(const char* line, State* state) {
-    state->factCount = 0;
-    char buffer[MAX_LEN];
-    strcpy(buffer, line);
-
-    char* token = strtok(buffer, ",");
-    while(token != NULL && state->factCount < MAX_FACTS) {
-        trim(token);
-        if(strlen(token) > 0) {
-            strcpy(state->facts[state->factCount], token);
-            state->factCount++;
-        }
-        token = strtok(NULL, ",");
-    }
-}
-
-// Verifie que subset est inclus dans st : tous les faits de subset doivent etre dans st
-int stateContainsAll(const State* st, const State* subset) {
-    for(int i = 0; i < subset->factCount; i++) {
-        int found = 0;
-        for(int j = 0; j < st->factCount; j++) {
-            if(strcmp(st->facts[j], subset->facts[i]) == 0) {
-                found = 1;
-                break;
-            }
-        }
-        if(!found) return 0; 
-    }
-    return 1;
-}
-
-// Test si on peut appliquer l'action : toutes ses preconditions sont dans l'etat
-int canApply(const State* st, const Action* action) {
-    return stateContainsAll(st, &action->preconds);
-}
-
-// Applique l'action : on supprime delList, puis on ajoute addList (sans doublons)
-void applyAction(const State* st, const Action* action, State* newState) {
-    // Copie de l'etat actuel
-    *newState = *st;
-
-    // 1) Supprimer
-    for(int d = 0; d < action->delList.factCount; d++) {
-        for(int i = 0; i < newState->factCount; i++) {
-            if(strcmp(newState->facts[i], action->delList.facts[d]) == 0) {
-                // On supprime le fait i en decalant
-                for(int k = i; k < newState->factCount - 1; k++) {
-                    strcpy(newState->facts[k], newState->facts[k+1]);
-                }
-                newState->factCount--;
-                i--; // pour re-verifier la meme position
-            }
-        }
-    }
-
-    // 2) Ajouter
-    for(int a = 0; a < action->addList.factCount; a++) {
-        int found = 0;
-        for(int i = 0; i < newState->factCount; i++) {
-            if(strcmp(newState->facts[i], action->addList.facts[a]) == 0) {
-                found = 1;
-                break;
-            }
-        }
-        if(!found && newState->factCount < MAX_FACTS) {
-            strcpy(newState->facts[newState->factCount], action->addList.facts[a]);
-            newState->factCount++;
-        }
-    }
-}
-
-// Compare deux etats pour voir s'ils sont identiques (meme ensemble de faits)
-bool sameState(const State* a, const State* b) {
-    if(a->factCount != b->factCount) return false;
-    // Verifier que chaque fait de a est dans b
-    for(int i = 0; i < a->factCount; i++) {
-        int found = 0;
-        for(int j = 0; j < b->factCount; j++) {
-            if(strcmp(a->facts[i], b->facts[j]) == 0) {
-                found = 1;
-                break;
-            }
-        }
-        if(!found) return false;
-    }
-    return true;
-}
-
-// Test si l'etat satisfait l'objectif (finish)
-int isGoalReached(const State* st, const Goal* goal) {
-    return stateContainsAll(st, goal);
-}
-
-// ---------------------------------------------------------------------
-// 3) Parsing du fichier
-// ---------------------------------------------------------------------
-// Lecture en 1 passe : start / finish / **** / action:... / preconds:... / add:... / delete:...
-int parseFile(const char* filename, State* initial, Goal* goal, Action* actions, int* actionCount) {
-    FILE* fp = fopen(filename, "r");
-    if(!fp) {
-        printf("Erreur: impossible d'ouvrir %s\n", filename);
+/**
+ * Fonction pour charger les règles à partir d'un fichier
+ */
+int chargerRegles(const char *fichier, Regle regles[]) {
+    FILE *f = fopen(fichier, "r");
+    if(!f) {
+        printf("Erreur: impossible d'ouvrir le fichier %s\n", fichier);
         return 0;
     }
-
-    char line[MAX_LEN];
-    int readingActionIndex = -1; 
-    *actionCount = 0;
-
-    // Vider initial / goal
-    initial->factCount = 0;
-    goal->factCount = 0;
-
-    while(fgets(line, sizeof(line), fp)) {
-        // enlever \n
-        line[strcspn(line, "\r\n")] = '\0';
-
-        if(strncmp(line, "****", 4) == 0) {
-            readingActionIndex++;
-            (*actionCount)++;
-            continue;
-        }
-
-        if(readingActionIndex < 0) {
-            // On n'est pas dans un bloc action
-            if(strncmp(line, "start:", 6) == 0) {
-                splitFacts(line + 6, initial);
-            }
-            else if(strncmp(line, "finish:", 7) == 0) {
-                splitFacts(line + 7, goal);
-            }
-        } else {
-            // On est dans un bloc action
-            int idx = readingActionIndex;
-            if(strncmp(line, "action:", 7) == 0) {
-                strcpy(actions[idx].name, line + 7);
-            }
-            else if(strncmp(line, "preconds:", 9) == 0) {
-                splitFacts(line + 9, &actions[idx].preconds);
-            }
-            else if(strncmp(line, "add:", 4) == 0) {
-                splitFacts(line + 4, &actions[idx].addList);
-            }
-            else if(strncmp(line, "delete:", 7) == 0) {
-                splitFacts(line + 7, &actions[idx].delList);
-            }
-        }
-    }
-
-    fclose(fp);
-    return 1;
-}
-
-// ---------------------------------------------------------------------
-// 4) BFS : on cherche un plan depuis 'start' jusqu'au 'goal'
-// ---------------------------------------------------------------------
-int bfs(const State* start, const Goal* goal, Action* actions, int actionCount) {
-    // Reinit
-    visitedCount = 0;
-    front = 0;
-    rear = 0;
-
-    // L'etat initial -> visited[0]
-    visited[0].state = *start;
-    visited[0].parent = -1;
-    visited[0].actionFromParent = -1;
-    visitedCount = 1;
-
-    // On push 0 dans la file
-    queueArray[rear++] = 0;
-
-    // Parcours
-    while(front < rear) {
-        int currentIndex = queueArray[front++];
-        Node currentNode = visited[currentIndex];
-
-        // Test objectif
-        if(isGoalReached(&currentNode.state, goal)) {
-            return currentIndex; // On a trouve
-        }
-
-        // Sinon, on tente toutes les actions
-        for(int a = 0; a < actionCount; a++) {
-            if(canApply(&currentNode.state, &actions[a])) {
-                // generer un nouvel etat
-                State newState;
-                applyAction(&currentNode.state, &actions[a], &newState);
-
-                // verif si deja vu
-                bool dejaVu = false;
-                for(int i = 0; i < visitedCount; i++) {
-                    if(sameState(&newState, &visited[i].state)) {
-                        dejaVu = true;
-                        break;
-                    }
-                }
-                if(!dejaVu && visitedCount < MAX_STATES) {
-                    visited[visitedCount].state = newState;
-                    visited[visitedCount].parent = currentIndex;
-                    visited[visitedCount].actionFromParent = a;
-                    queueArray[rear++] = visitedCount;
-                    visitedCount++;
-                }
-            }
-        }
-    }
-
-    // Pas trouve
-    return -1;
-}
-
-// ---------------------------------------------------------------------
-// 5) Reconstruction du plan (liste d'actions) a partir de l'index solution
-// ---------------------------------------------------------------------
-void reconstructPlan(int solutionIndex, Action* actions) {
-    int plan[MAX_STATES];
-    int length = 0;
-
-    int current = solutionIndex;
-    while(current != -1) {
-        plan[length] = visited[current].actionFromParent;
-        length++;
-        current = visited[current].parent;
-    }
-    // plan[length-1] doit etre -1 (et correspond a l'etat initial)
-
-    // Affiche en sens direct
-    printf("\n=== PLAN TROUVE ===\n");
-    int step = 1;
-    // Saute le tout dernier -1
-    for(int i = length - 2; i >= 0; i--) {
-        int actionIndex = plan[i];
-        printf("Etape %d: %s\n", step, actions[actionIndex].name);
-        step++;
-    }
-    printf("=== FIN DU PLAN ===\n\n");
-}
-
-// ---------------------------------------------------------------------
-// 6) Fonctions pour creation d'un fichier via l'utilisateur
-// ---------------------------------------------------------------------
-
-// Pose une question et recupere la reponse dans 'buffer'
-void demanderTexte(const char* question, char* buffer, int bufferSize) {
-    printf("%s", question);
-    fgets(buffer, bufferSize, stdin);
-    // enlever \n
-    buffer[strcspn(buffer, "\r\n")] = '\0';
-}
-
-// Cree un fichier en format correct
-// start:...
-// finish:...
-// puis un certain nombre d'actions, chacune separee par ****
-int creerFichier(char* nomFichier) {
-    // On demande a l'utilisateur un nom de fichier
-    demanderTexte("Entrez le nom du fichier a creer (ex: monFichier.txt) : ", nomFichier, MAX_LEN);
     
-    FILE* fp = fopen(nomFichier, "w");
-    if(!fp) {
-        printf("Impossible de creer le fichier '%s'.\n", nomFichier);
+    char ligne[MAX_LIGNE];
+    int nb_regles = 0;
+    
+    while(fgets(ligne, MAX_LIGNE, f) && nb_regles < MAX_REGLES) {
+        // Format attendu: action|precond1,precond2,...|add1,add2,...|del1,del2,...
+        ligne[strcspn(ligne, "\n")] = 0;  // Enlever le retour à la ligne
+        
+        char *token = strtok(ligne, "|");
+        if(!token) continue;
+        
+        strcpy(regles[nb_regles].action, token);
+        regles[nb_regles].nb_preconds = 0;
+        regles[nb_regles].nb_adds = 0;
+        regles[nb_regles].nb_deletes = 0;
+        
+        // Préconditions
+        token = strtok(NULL, "|");
+        if(token) {
+            char *precond = strtok(token, ",");
+            while(precond && regles[nb_regles].nb_preconds < MAX_MOTS) {
+                strcpy(regles[nb_regles].preconds[regles[nb_regles].nb_preconds++], precond);
+                precond = strtok(NULL, ",");
+            }
+        }
+        
+        // Ajouts
+        token = strtok(NULL, "|");
+        if(token) {
+            char *add = strtok(token, ",");
+            while(add && regles[nb_regles].nb_adds < MAX_MOTS) {
+                strcpy(regles[nb_regles].adds[regles[nb_regles].nb_adds++], add);
+                add = strtok(NULL, ",");
+            }
+        }
+        
+        // Suppressions
+        token = strtok(NULL, "|");
+        if(token) {
+            char *del = strtok(token, ",");
+            while(del && regles[nb_regles].nb_deletes < MAX_MOTS) {
+                strcpy(regles[nb_regles].deletes[regles[nb_regles].nb_deletes++], del);
+                del = strtok(NULL, ",");
+            }
+        }
+        
+        nb_regles++;
+    }
+    
+    fclose(f);
+    return nb_regles;
+}
+
+/**
+ * Fonction pour charger des faits à partir d'un fichier
+ */
+int chargerFaits(const char *fichier, string faits[]) {
+    FILE *f = fopen(fichier, "r");
+    if(!f) {
+        printf("Erreur: impossible d'ouvrir le fichier %s\n", fichier);
         return 0;
     }
-
-    // 1) Conditions initiales
-    char buf[MAX_LEN];
-    demanderTexte("Entrez les conditions initiales (separees par des virgules):\n> ", buf, MAX_LEN);
-    fprintf(fp, "start:%s\n", buf);
-
-    // 2) Conditions d'arrivee
-    demanderTexte("Entrez les conditions d'arrivee (finish), separees par des virgules:\n> ", buf, MAX_LEN);
-    fprintf(fp, "finish:%s\n", buf);
-
-    // 3) Combien d'actions ?
-    int nbActions = 0;
-    printf("Combien d'actions voulez-vous saisir ? ");
-    scanf("%d", &nbActions);
-    getchar(); // flush \n
-
-    for(int i=0; i<nbActions; i++){
-        fprintf(fp, "****\n");
-        // Action (nom)
-        demanderTexte("\nNom de l'action : ", buf, MAX_LEN);
-        fprintf(fp, "action:%s\n", buf);
-
-        // preconds
-        demanderTexte("Preconditions (separees par des virgules) : ", buf, MAX_LEN);
-        fprintf(fp, "preconds:%s\n", buf);
-
-        // add
-        demanderTexte("Faits ajoutes (separes par des virgules) : ", buf, MAX_LEN);
-        fprintf(fp, "add:%s\n", buf);
-
-        // delete
-        demanderTexte("Faits supprimes (separes par des virgules) : ", buf, MAX_LEN);
-        fprintf(fp, "delete:%s\n", buf);
+    
+    char ligne[MAX_LIGNE];
+    int nb_faits = 0;
+    
+    while(fgets(ligne, MAX_LIGNE, f) && nb_faits < MAX_MOTS) {
+        ligne[strcspn(ligne, "\n")] = 0;  // Enlever le retour à la ligne
+        if(strlen(ligne) > 0) {
+            strcpy(faits[nb_faits++], ligne);
+        }
     }
+    
+    fclose(f);
+    return nb_faits;
+}
 
-    fclose(fp);
-    printf("\nFichier '%s' cree avec succes.\n", nomFichier);
+/**
+ * Vérifie si un fait existe dans un état
+ */
+int contientFait(Etat *etat, const char *fait) {
+    for(int i = 0; i < etat->nb_faits; i++) {
+        if(strcmp(etat->faits[i], fait) == 0) return 1;
+    }
+    return 0;
+}
+
+/**
+ * Vérifie si toutes les préconditions d'une règle sont satisfaites dans un état
+ */
+int preconditionsSatisfaites(Regle *regle, Etat *etat) {
+    for(int i = 0; i < regle->nb_preconds; i++) {
+        if(!contientFait(etat, regle->preconds[i])) return 0;
+    }
     return 1;
 }
 
-void choixUn(){
-    // Fichier par defaut : monkeys.txt
-    const char* defaultFile = "monkeys.txt";
-    State initial;
-    Goal goal;
-    Action actions[MAX_ACTIONS];
-    int actionCount = 0;
-
-    if(!parseFile(defaultFile, &initial, &goal, actions, &actionCount)) {
-        // erreur
-    }
-
-    // Affichage simple
-    printf("\n=== ETAT INITIAL (START) ===\n");
-    printf("Nombre de faits: %d\n", initial.factCount);
-    for(int i=0; i<initial.factCount; i++){
-        printf(" - %s\n", initial.facts[i]);
-    }
-
-    printf("\n=== OBJECTIF (FINISH) ===\n");
-    printf("Nombre de faits: %d\n", goal.factCount);
-    for(int i=0; i<goal.factCount; i++){
-        printf(" - %s\n", goal.facts[i]);
-    }
-
-    printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
-    for(int i=0; i<actionCount; i++){
-        // On n'affiche que le nom
-        printf(" - %s\n", actions[i].name);
-    }
-
-    // Lancement BFS
-    int solIndex = bfs(&initial, &goal, actions, actionCount);
-    if(solIndex == -1) {
-        printf("\nAucune solution trouvee.\n\n");
-    } else {
-        reconstructPlan(solIndex, actions);
-    }
-}
-
-void choixDeux(){
-    // Fichier personnalise
-    char nomFichier[MAX_LEN];
-    demanderTexte("Entrez le nom du fichier a utiliser : ", nomFichier, MAX_LEN);
-
-    State initial;
-    Goal goal;
-    Action actions[MAX_ACTIONS];
-    int actionCount = 0;
-
-    if(!parseFile(nomFichier, &initial, &goal, actions, &actionCount)) {
-        //erreur
-    }
-
-    // Affichage (uniquement nb de faits start, finish, nb d'actions, noms)
-    printf("\n=== ETAT INITIAL (START) ===\n");
-    printf("Nombre de faits: %d\n", initial.factCount);
-    for(int i=0; i<initial.factCount; i++){
-        printf(" - %s\n", initial.facts[i]);
-    }
-
-    printf("\n=== OBJECTIF (FINISH) ===\n");
-    printf("Nombre de faits: %d\n", goal.factCount);
-    for(int i=0; i<goal.factCount; i++){
-        printf(" - %s\n", goal.facts[i]);
-    }
-
-    printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
-    for(int i=0; i<actionCount; i++){
-        printf(" - %s\n", actions[i].name);
-    }
-
-    // BFS
-    int solIndex = bfs(&initial, &goal, actions, actionCount);
-    if(solIndex == -1) {
-        printf("\nAucune solution trouvee.\n\n");
-    } else {
-        reconstructPlan(solIndex, actions);
-    }
-}
-
-void choixTrois(){
-  // Creer un nouveau fichier
-            char nomFichier[MAX_LEN];
-            if(!creerFichier(nomFichier)) {
-               // echec creation
+/**
+ * Applique une règle à un état pour créer un nouvel état
+ */
+void appliquerRegle(Regle *regle, Etat *source, Etat *destination) {
+    // Copie des faits existants
+    destination->nb_faits = 0;
+    for(int i = 0; i < source->nb_faits; i++) {
+        int aSupprimer = 0;
+        for(int j = 0; j < regle->nb_deletes; j++) {
+            if(strcmp(source->faits[i], regle->deletes[j]) == 0) {
+                aSupprimer = 1;
+                break;
             }
-            // Proposition de verification immediate
-            printf("Voulez-vous tester la resolution sur ce fichier ? (o/n) ");
-            char rep[10];
-            fgets(rep, 10, stdin);
-            if(rep[0] == 'o' || rep[0] == 'O') {
-                // On parse & BFS
-                State initial;
-                Goal goal;
-                Action actions[MAX_ACTIONS];
-                int actionCount = 0;
+        }
+        if(!aSupprimer) {
+            strcpy(destination->faits[destination->nb_faits++], source->faits[i]);
+        }
+    }
+    
+    // Ajout des nouveaux faits
+    for(int i = 0; i < regle->nb_adds; i++) {
+        if(!contientFait(destination, regle->adds[i])) {
+            strcpy(destination->faits[destination->nb_faits++], regle->adds[i]);
+        }
+    }
+    
+    // Enregistrement de la règle appliquée
+    destination->regle_appliquee = regle->indice;
+}
 
-                if(!parseFile(nomFichier, &initial, &goal, actions, &actionCount)) {
-                    printf("Erreur lors du parsing. Abandon.\n");
-                } else {
-                    // Meme affichage
-                    printf("\n=== ETAT INITIAL (START) ===\n");
-                    printf("Nombre de faits: %d\n", initial.factCount);
-                    for(int i=0; i<initial.factCount; i++){
-                        printf(" - %s\n", initial.facts[i]);
-                    }
+/**
+ * Vérifie si tous les buts sont atteints dans un état
+ */
+int butsAtteints(Etat *etat, string buts[], int nb_buts) {
+    for(int i = 0; i < nb_buts; i++) {
+        if(!contientFait(etat, buts[i])) return 0;
+    }
+    return 1;
+}
 
-                    printf("\n=== OBJECTIF (FINISH) ===\n");
-                    printf("Nombre de faits: %d\n", goal.factCount);
-                    for(int i=0; i<goal.factCount; i++){
-                        printf(" - %s\n", goal.facts[i]);
-                    }
+/**
+ * Affiche les faits d'un état
+ */
+void afficherEtat(Etat *etat) {
+    printf("Faits : ");
+    for(int i = 0; i < etat->nb_faits; i++) {
+        printf("%s", etat->faits[i]);
+        if(i < etat->nb_faits - 1) printf(", ");
+    }
+    printf("\n");
+}
 
-                    printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
-                    for(int i=0; i<actionCount; i++){
-                        printf(" - %s\n", actions[i].name);
-                    }
-
-                    int solIndex = bfs(&initial, &goal, actions, actionCount);
-                    if(solIndex == -1) {
-                        printf("\nAucune solution trouvee pour ce fichier.\n\n");
-                    } else {
-                        reconstructPlan(solIndex, actions);
-                    }
-                }
+/**
+ * Recherche avec backtracking pour trouver une solution avec affichage détaillé
+ */
+int rechercheSolutionBacktrackDebug(Etat etats[], int *nb_etats, Regle regles[], int nb_regles, 
+                             string buts[], int nb_buts) {
+    int possible = 1;
+    int IR = 0;  // Indice à partir duquel on cherche une règle applicable
+    int etat_courant = 0;
+    int profondeur = 0;
+    int nb_backtracks = 0;
+    
+    printf("\n=== DÉBUT DE LA RECHERCHE AVEC BACKTRACKING ===\n\n");
+    
+    while(possible && !butsAtteints(&etats[etat_courant], buts, nb_buts)) {
+        int regle_trouvee = 0;
+        
+        printf("État actuel #%d (profondeur %d):\n", etat_courant, profondeur);
+        afficherEtat(&etats[etat_courant]);
+        printf("Recherche d'une règle applicable à partir de l'indice IR=%d\n", IR);
+        
+        // Vérification des buts
+        printf("Vérification des buts: ");
+        int nb_buts_atteints = 0;
+        for(int i = 0; i < nb_buts; i++) {
+            if(contientFait(&etats[etat_courant], buts[i])) {
+                nb_buts_atteints++;
+                printf("'%s' ✓ ", buts[i]);
             } else {
-                printf("Ok, fichier cree, pas de verification. Retour au menu.\n");
+                printf("'%s' ✗ ", buts[i]);
             }
         }
-
-// ---------------------------------------------------------------------
-// 7) Programme principal
-// ---------------------------------------------------------------------
-int main() {
-    int choix=0;
-
-    // Affichage ASCII
-    afficherEnteteASCII();
-
-    while (choix != 4){
-        choix = afficherMenu();
-
-        switch (choix) {
-            case 1:
-                choixUn();
-            break;
-            case 2:
-                choixDeux();
-            break;
-            case 3:
-                choixTrois();
-            break;
-            case 4:
-                printf("Au revoir !\n");
-            break;
-            default:
-                printf("Choix invalide.\n");
+        printf("(%d/%d atteints)\n", nb_buts_atteints, nb_buts);
+        
+        // Cherche une règle applicable d'indice > IR
+        for(int i = IR; i < nb_regles; i++) {
+            printf("  Évaluation règle #%d ('%s'): ", i, regles[i].action);
+            
+            if(preconditionsSatisfaites(&regles[i], &etats[etat_courant])) {
+                printf("✓ (préconditions satisfaites)\n");
+                
+                // Applique la règle pour créer un nouvel état
+                etats[*nb_etats].parent = etat_courant;
+                appliquerRegle(&regles[i], &etats[etat_courant], &etats[*nb_etats]);
+                
+                printf("  Application de la règle '%s'\n", regles[i].action);
+                printf("  Nouvel état créé #%d:\n", *nb_etats);
+                afficherEtat(&etats[*nb_etats]);
+                
+                etat_courant = *nb_etats;
+                (*nb_etats)++;
+                profondeur++;
+                IR = 0;  // Réinitialise IR pour le nouvel état
+                printf("  IR réinitialisé à 0 pour le nouvel état\n");
+                regle_trouvee = 1;
+                break;
+            } else {
+                printf("✗ (préconditions non satisfaites)\n");
+            }
         }
+        
+        if(!regle_trouvee) {
+            printf("Aucune règle applicable trouvée pour l'état #%d\n", etat_courant);
+            
+            if(etat_courant > 0) {
+                // Backtrack: revient à l'état précédent
+                int ancien_etat = etat_courant;
+                IR = etats[etat_courant].regle_appliquee + 1;
+                etat_courant = etats[etat_courant].parent;
+                profondeur--;
+                (*nb_etats)--;  // Oublie l'état courant
+                
+                printf("BACKTRACK! Retour à l'état parent #%d\n", etat_courant);
+                printf("IR mis à %d (règle suivante à tester)\n", IR);
+                nb_backtracks++;
+            } else {
+                possible = 0;  // Aucune solution trouvée
+                printf("Impossible de backtracker depuis l'état initial. ÉCHEC.\n");
+            }
+        }
+        
+        printf("\n");
     }
+    
+    printf("=== FIN DE LA RECHERCHE ===\n");
+    printf("Nombre total d'états explorés: %d\n", *nb_etats);
+    printf("Nombre de backtracks effectués: %d\n", nb_backtracks);
+    
+    if(possible) {
+        printf("SUCCÈS! Tous les buts sont atteints dans l'état #%d\n", etat_courant);
+    } else {
+        printf("ÉCHEC! Aucune solution trouvée après exploration complète.\n");
+    }
+    
+    return possible ? etat_courant : -1;
+}
 
+/**
+ * Affiche la solution trouvée avec des détails
+ */
+void afficherSolutionDetaillee(Etat etats[], Regle regles[], int indice_solution) {
+    if(indice_solution < 0) {
+        printf("Aucune solution trouvée.\n");
+        return;
+    }
+    
+    // Reconstruit le chemin de la solution
+    int chemin[MAX_ETATS];
+    int longueur = 0;
+    int indice = indice_solution;
+    
+    while(indice > 0) {
+        chemin[longueur++] = indice;
+        indice = etats[indice].parent;
+    }
+    
+    printf("\n=== SOLUTION DÉTAILLÉE (%d étapes) ===\n", longueur);
+    printf("État initial:\n");
+    afficherEtat(&etats[0]);
+    
+    for(int i = longueur - 1; i >= 0; i--) {
+        int etat_indice = chemin[i];
+        int regle_indice = etats[etat_indice].regle_appliquee;
+        
+        printf("\nÉtape %d: Application de la règle #%d '%s'\n", 
+               longueur - i, regle_indice, regles[regle_indice].action);
+        
+        printf("Préconditions: ");
+        for(int j = 0; j < regles[regle_indice].nb_preconds; j++) {
+            printf("%s", regles[regle_indice].preconds[j]);
+            if(j < regles[regle_indice].nb_preconds - 1) printf(", ");
+        }
+        printf("\n");
+        
+        printf("Ajouts: ");
+        for(int j = 0; j < regles[regle_indice].nb_adds; j++) {
+            printf("%s", regles[regle_indice].adds[j]);
+            if(j < regles[regle_indice].nb_adds - 1) printf(", ");
+        }
+        printf("\n");
+        
+        printf("Suppressions: ");
+        for(int j = 0; j < regles[regle_indice].nb_deletes; j++) {
+            printf("%s", regles[regle_indice].deletes[j]);
+            if(j < regles[regle_indice].nb_deletes - 1) printf(", ");
+        }
+        printf("\n");
+        
+        printf("Nouvel état obtenu:\n");
+        afficherEtat(&etats[etat_indice]);
+    }
+}
+
+int main() {
+    Regle regles[MAX_REGLES];
+    string faits_initiaux[MAX_MOTS];
+    string buts[MAX_MOTS];
+    Etat etats[MAX_ETATS];
+    int nb_etats = 1;
+    
+    // Chargement des données
+    int nb_regles = chargerRegles("assets/regles.txt", regles);
+    int nb_faits = chargerFaits("assets/faits.txt", faits_initiaux);
+    int nb_buts = chargerFaits("assets/buts.txt", buts);
+    
+    printf("=== SYSTÈME GPS AVEC BACKTRACKING (DEBUG) ===\n");
+    printf("Règles chargées: %d\n", nb_regles);
+    printf("Faits initiaux: %d\n", nb_faits);
+    printf("Buts: %d\n", nb_buts);
+    
+    // Affichage des règles
+    printf("\nRègles:\n");
+    for(int i = 0; i < nb_regles; i++) {
+        printf("Règle #%d: %s\n", i, regles[i].action);
+        printf("  Préconditions (%d): ", regles[i].nb_preconds);
+        for(int j = 0; j < regles[i].nb_preconds; j++) {
+            printf("%s", regles[i].preconds[j]);
+            if(j < regles[i].nb_preconds - 1) printf(", ");
+        }
+        printf("\n");
+        
+        printf("  Ajouts (%d): ", regles[i].nb_adds);
+        for(int j = 0; j < regles[i].nb_adds; j++) {
+            printf("%s", regles[i].adds[j]);
+            if(j < regles[i].nb_adds - 1) printf(", ");
+        }
+        printf("\n");
+        
+        printf("  Suppressions (%d): ", regles[i].nb_deletes);
+        for(int j = 0; j < regles[i].nb_deletes; j++) {
+            printf("%s", regles[i].deletes[j]);
+            if(j < regles[i].nb_deletes - 1) printf(", ");
+        }
+        printf("\n");
+    }
+    
+    // Affichage des faits initiaux
+    printf("\nFaits initiaux:\n");
+    for(int i = 0; i < nb_faits; i++) {
+        printf("  %s\n", faits_initiaux[i]);
+    }
+    
+    // Affichage des buts
+    printf("\nButs:\n");
+    for(int i = 0; i < nb_buts; i++) {
+        printf("  %s\n", buts[i]);
+    }
+    
+    // Initialisation des indices des règles
+    for(int i = 0; i < nb_regles; i++) {
+        regles[i].indice = i;
+    }
+    
+    // Initialisation de l'état initial
+    etats[0].nb_faits = nb_faits;
+    etats[0].parent = -1;
+    etats[0].regle_appliquee = -1;
+    for(int i = 0; i < nb_faits; i++) {
+        strcpy(etats[0].faits[i], faits_initiaux[i]);
+    }
+    
+    // Recherche d'une solution avec backtracking et debug
+    int solution = rechercheSolutionBacktrackDebug(etats, &nb_etats, regles, nb_regles, buts, nb_buts);
+    
+    // Affichage détaillé de la solution
+    afficherSolutionDetaillee(etats, regles, solution);
+    
     return 0;
 }

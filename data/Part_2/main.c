@@ -359,8 +359,6 @@ int main() {
     return EXIT_SUCCESS;
 }
 
-<<<<<<< Updated upstream
-=======
 /**
  * Affiche la solution trouvée
  */
@@ -417,4 +415,3 @@ int main() {
     
     return 0;
 }
->>>>>>> Stashed changes
