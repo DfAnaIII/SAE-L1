@@ -20,9 +20,9 @@
 
 ## Demo
 
-- [Lien de la démo.](https://www.sae.gofindr.fr/)
+- [Lien de la démo.](https://sae.gofindr.fr/)
 
 ## Documentation
 
-[✨Lien vers la documentation](https://www.sae.gofindr.fr/documentation)
+[✨Lien vers la documentation](https://sae.gofindr.fr/documentation)
 
