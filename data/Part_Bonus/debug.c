@@ -52,7 +52,7 @@ int rear = 0;              // Indice d'écriture de la file
 // ---------------------------------------------------------------------
 // 1) Affichage ASCII de présentation
 // ---------------------------------------------------------------------
-void afficherEnteteASCII() {
+void AfficherEnteteASCII() {
     printf("+----------------------------------------------+\n");
     printf("|                                              |\n");
     printf("|      Projet GPS (General Problem Solver)     |\n");
@@ -65,7 +65,7 @@ void afficherEnteteASCII() {
 // ---------------------------------------------------------------------
 // 2) Menu principal
 // ---------------------------------------------------------------------
-int afficherMenu() {
+int AfficherMenu() {
     printf("+---------------------------------------------------+\n");
     printf("|                                                   |\n");
     printf("|                 Menu principal :                  |\n");
@@ -87,7 +87,7 @@ int afficherMenu() {
 // ---------------------------------------------------------------------
 
 // Trim : retire les espaces en debut et en fin de chaine
-void trim(char* str) {
+void Trim(char* str) {
     // Enlever espaces en debut
     while(*str == ' ' || *str == '\t') {
         memmove(str, str+1, strlen(str));
@@ -101,14 +101,14 @@ void trim(char* str) {
 }
 
 // Decoupe une ligne en morceaux separes par des virgules, stocke dans un State
-void splitFacts(const char* line, State* state) {
+void SplitFacts(const char* line, State* state) {
     state->factCount = 0;
     char buffer[MAX_LEN];
     strcpy(buffer, line);
 
     char* token = strtok(buffer, ",");
     while(token != NULL && state->factCount < MAX_FACTS) {
-        trim(token);
+        Trim(token);
         if(strlen(token) > 0) {
             strcpy(state->facts[state->factCount], token);
             state->factCount++;
@@ -118,7 +118,7 @@ void splitFacts(const char* line, State* state) {
 }
 
 // Verifie que subset est inclus dans st : tous les faits de subset doivent etre dans st
-int stateContainsAll(const State* st, const State* subset) {
+int StateContainsAll(const State* st, const State* subset) {
     for(int i = 0; i < subset->factCount; i++) {
         int found = 0;
         for(int j = 0; j < st->factCount; j++) {
@@ -133,12 +133,12 @@ int stateContainsAll(const State* st, const State* subset) {
 }
 
 // Test si on peut appliquer l'action : toutes ses preconditions sont dans l'etat
-int canApply(const State* st, const Action* action) {
-    return stateContainsAll(st, &action->preconds);
+int CanApply(const State* st, const Action* action) {
+    return StateContainsAll(st, &action->preconds);
 }
 
 // Applique l'action : on supprime delList, puis on ajoute addList (sans doublons)
-void applyAction(const State* st, const Action* action, State* newState) {
+void ApplyAction(const State* st, const Action* action, State* newState) {
     // Copie de l'etat actuel
     *newState = *st;
 
@@ -173,7 +173,7 @@ void applyAction(const State* st, const Action* action, State* newState) {
 }
 
 // Compare deux etats pour voir s'ils sont identiques (meme ensemble de faits)
-bool sameState(const State* a, const State* b) {
+bool SameState(const State* a, const State* b) {
     if(a->factCount != b->factCount) return false;
     // Verifier que chaque fait de a est dans b
     for(int i = 0; i < a->factCount; i++) {
@@ -190,15 +190,15 @@ bool sameState(const State* a, const State* b) {
 }
 
 // Test si l'etat satisfait l'objectif (finish)
-int isGoalReached(const State* st, const Goal* goal) {
-    return stateContainsAll(st, goal);
+int IsGoalReached(const State* st, const Goal* goal) {
+    return StateContainsAll(st, goal);
 }
 
 // ---------------------------------------------------------------------
 // 3) Parsing du fichier
 // ---------------------------------------------------------------------
 // Lecture en 1 passe : start / finish / **** / action:... / preconds:... / add:... / delete:...
-int parseFile(const char* filename, State* initial, Goal* goal, Action* actions, int* actionCount) {
+int ParseFile(const char* filename, State* initial, Goal* goal, Action* actions, int* actionCount) {
     FILE* fp = fopen(filename, "r");
     if(!fp) {
         printf("Erreur: impossible d'ouvrir %s\n", filename);
@@ -226,10 +226,10 @@ int parseFile(const char* filename, State* initial, Goal* goal, Action* actions,
         if(readingActionIndex < 0) {
             // On n'est pas dans un bloc action
             if(strncmp(line, "start:", 6) == 0) {
-                splitFacts(line + 6, initial);
+                SplitFacts(line + 6, initial);
             }
             else if(strncmp(line, "finish:", 7) == 0) {
-                splitFacts(line + 7, goal);
+                SplitFacts(line + 7, goal);
             }
         } else {
             // On est dans un bloc action
@@ -238,13 +238,13 @@ int parseFile(const char* filename, State* initial, Goal* goal, Action* actions,
                 strcpy(actions[idx].name, line + 7);
             }
             else if(strncmp(line, "preconds:", 9) == 0) {
-                splitFacts(line + 9, &actions[idx].preconds);
+                SplitFacts(line + 9, &actions[idx].preconds);
             }
             else if(strncmp(line, "add:", 4) == 0) {
-                splitFacts(line + 4, &actions[idx].addList);
+                SplitFacts(line + 4, &actions[idx].addList);
             }
             else if(strncmp(line, "delete:", 7) == 0) {
-                splitFacts(line + 7, &actions[idx].delList);
+                SplitFacts(line + 7, &actions[idx].delList);
             }
         }
     }
@@ -256,7 +256,7 @@ int parseFile(const char* filename, State* initial, Goal* goal, Action* actions,
 // ---------------------------------------------------------------------
 // 4) BFS : on cherche un plan depuis 'start' jusqu'au 'goal'
 // ---------------------------------------------------------------------
-int bfs(const State* start, const Goal* goal, Action* actions, int actionCount) {
+int Bfs(const State* start, const Goal* goal, Action* actions, int actionCount) {
     // Reinit
     visitedCount = 0;
     front = 0;
@@ -277,21 +277,21 @@ int bfs(const State* start, const Goal* goal, Action* actions, int actionCount) 
         Node currentNode = visited[currentIndex];
 
         // Test objectif
-        if(isGoalReached(&currentNode.state, goal)) {
+        if(IsGoalReached(&currentNode.state, goal)) {
             return currentIndex; // On a trouve
         }
 
         // Sinon, on tente toutes les actions
         for(int a = 0; a < actionCount; a++) {
-            if(canApply(&currentNode.state, &actions[a])) {
+            if(CanApply(&currentNode.state, &actions[a])) {
                 // generer un nouvel etat
                 State newState;
-                applyAction(&currentNode.state, &actions[a], &newState);
+                ApplyAction(&currentNode.state, &actions[a], &newState);
 
                 // verif si deja vu
                 bool dejaVu = false;
                 for(int i = 0; i < visitedCount; i++) {
-                    if(sameState(&newState, &visited[i].state)) {
+                    if(SameState(&newState, &visited[i].state)) {
                         dejaVu = true;
                         break;
                     }
@@ -314,7 +314,7 @@ int bfs(const State* start, const Goal* goal, Action* actions, int actionCount) 
 // ---------------------------------------------------------------------
 // 5) Reconstruction du plan (liste d'actions) a partir de l'index solution
 // ---------------------------------------------------------------------
-void reconstructPlan(int solutionIndex, Action* actions) {
+void ReconstructPlan(int solutionIndex, Action* actions) {
     int plan[MAX_STATES];
     int length = 0;
 
@@ -343,7 +343,7 @@ void reconstructPlan(int solutionIndex, Action* actions) {
 // ---------------------------------------------------------------------
 
 // Pose une question et recupere la reponse dans 'buffer'
-void demanderTexte(const char* question, char* buffer, int bufferSize) {
+void DemanderTexte(const char* question, char* buffer, int bufferSize) {
     printf("%s", question);
     fgets(buffer, bufferSize, stdin);
     // enlever \n
@@ -354,9 +354,9 @@ void demanderTexte(const char* question, char* buffer, int bufferSize) {
 // start:...
 // finish:...
 // puis un certain nombre d'actions, chacune separee par ****
-int creerFichier(char* nomFichier) {
+int CreerFichier(char* nomFichier) {
     // On demande a l'utilisateur un nom de fichier
-    demanderTexte("Entrez le nom du fichier a creer (ex: monFichier.txt) : ", nomFichier, MAX_LEN);
+    DemanderTexte("Entrez le nom du fichier a creer (ex: monFichier.txt) : ", nomFichier, MAX_LEN);
     
     FILE* fp = fopen(nomFichier, "w");
     if(!fp) {
@@ -366,11 +366,11 @@ int creerFichier(char* nomFichier) {
 
     // 1) Conditions initiales
     char buf[MAX_LEN];
-    demanderTexte("Entrez les conditions initiales (separees par des virgules):\n> ", buf, MAX_LEN);
+    DemanderTexte("Entrez les conditions initiales (separees par des virgules):\n> ", buf, MAX_LEN);
     fprintf(fp, "start:%s\n", buf);
 
     // 2) Conditions d'arrivee
-    demanderTexte("Entrez les conditions d'arrivee (finish), separees par des virgules:\n> ", buf, MAX_LEN);
+    DemanderTexte("Entrez les conditions d'arrivee (finish), separees par des virgules:\n> ", buf, MAX_LEN);
     fprintf(fp, "finish:%s\n", buf);
 
     // 3) Combien d'actions ?
@@ -382,19 +382,19 @@ int creerFichier(char* nomFichier) {
     for(int i=0; i<nbActions; i++){
         fprintf(fp, "****\n");
         // Action (nom)
-        demanderTexte("\nNom de l'action : ", buf, MAX_LEN);
+        DemanderTexte("\nNom de l'action : ", buf, MAX_LEN);
         fprintf(fp, "action:%s\n", buf);
 
         // preconds
-        demanderTexte("Preconditions (separees par des virgules) : ", buf, MAX_LEN);
+        DemanderTexte("Preconditions (separees par des virgules) : ", buf, MAX_LEN);
         fprintf(fp, "preconds:%s\n", buf);
 
         // add
-        demanderTexte("Faits ajoutes (separes par des virgules) : ", buf, MAX_LEN);
+        DemanderTexte("Faits ajoutes (separes par des virgules) : ", buf, MAX_LEN);
         fprintf(fp, "add:%s\n", buf);
 
         // delete
-        demanderTexte("Faits supprimes (separes par des virgules) : ", buf, MAX_LEN);
+        DemanderTexte("Faits supprimes (separes par des virgules) : ", buf, MAX_LEN);
         fprintf(fp, "delete:%s\n", buf);
     }
 
@@ -403,7 +403,50 @@ int creerFichier(char* nomFichier) {
     return 1;
 }
 
-void choixUn(){
+void AnalyseFichier(const char *nomfile) {
+    State initial;
+    Goal goal;
+    Action actions[MAX_ACTIONS];
+    int actionCount = 0;
+
+    if(!ParseFile(nomfile, &initial, &goal, actions, &actionCount)) {
+        // erreur
+    }
+
+    // Affichage simple
+    printf("\n+----------ETAT INITIAL (START)----------+\n|\n");
+    printf("| Nombre de faits: %d\n", initial.factCount);
+    for(int i=0; i<initial.factCount; i++){
+        printf("| - %s\n", initial.facts[i]);
+    }
+    printf("|\n+----------------------------------------+\n");
+
+
+    printf("\n+----------OBJECTIF (FINISH)----------+\n|\n");
+    printf("| Nombre de faits: %d\n", goal.factCount);
+    for(int i=0; i<goal.factCount; i++){
+        printf("| - %s\n", goal.facts[i]);
+    }
+    printf("|\n+-------------------------------------+\n");
+
+
+    printf("\n+----------ACTIONS DISPONIBLES (%d)----------+\n|\n", actionCount);
+    for(int i=0; i<actionCount; i++){
+        // On n'affiche que le nom
+        printf("| - %s\n", actions[i].name);
+    }
+    printf("|\n+-------------------------------------------+\n");
+
+    // Lancement BFS
+    int solIndex = Bfs(&initial, &goal, actions, actionCount);
+    if(solIndex == -1) {
+        printf("\nAucune solution trouvee.\n\n");
+    } else {
+        ReconstructPlan(solIndex, actions);
+    }
+}
+
+void ChoixFichierParDefaut(){
     // Fichier par defaut : monkeys.txt
     const char* defaultFile = "monkeys.txt";
     State initial;
@@ -411,7 +454,7 @@ void choixUn(){
     Action actions[MAX_ACTIONS];
     int actionCount = 0;
 
-    if(!parseFile(defaultFile, &initial, &goal, actions, &actionCount)) {
+    if(!ParseFile(defaultFile, &initial, &goal, actions, &actionCount)) {
         // erreur
     }
 
@@ -435,65 +478,74 @@ void choixUn(){
     }
 
     // Lancement BFS
-    int solIndex = bfs(&initial, &goal, actions, actionCount);
+    int solIndex = Bfs(&initial, &goal, actions, actionCount);
     if(solIndex == -1) {
         printf("\nAucune solution trouvee.\n\n");
     } else {
-        reconstructPlan(solIndex, actions);
+        ReconstructPlan(solIndex, actions);
     }
 }
 
-void choixDeux(){
-    // Fichier personnalise
-    char nomFichier[MAX_LEN];
-    demanderTexte("Entrez le nom du fichier a utiliser : ", nomFichier, MAX_LEN);
-
-    State initial;
-    Goal goal;
-    Action actions[MAX_ACTIONS];
-    int actionCount = 0;
-
-    if(!parseFile(nomFichier, &initial, &goal, actions, &actionCount)) {
-        //erreur
-    }
-
-    // Affichage (uniquement nb de faits start, finish, nb d'actions, noms)
-    printf("\n=== ETAT INITIAL (START) ===\n");
-    printf("Nombre de faits: %d\n", initial.factCount);
-    for(int i=0; i<initial.factCount; i++){
-        printf(" - %s\n", initial.facts[i]);
-    }
-
-    printf("\n=== OBJECTIF (FINISH) ===\n");
-    printf("Nombre de faits: %d\n", goal.factCount);
-    for(int i=0; i<goal.factCount; i++){
-        printf(" - %s\n", goal.facts[i]);
-    }
-
-    printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
-    for(int i=0; i<actionCount; i++){
-        printf(" - %s\n", actions[i].name);
-    }
-
-    // BFS
-    int solIndex = bfs(&initial, &goal, actions, actionCount);
-    if(solIndex == -1) {
-        printf("\nAucune solution trouvee.\n\n");
-    } else {
-        reconstructPlan(solIndex, actions);
-    }
+void viderbuffer()
+{
+    int c;
+    while ((c=getchar())!=EOF && c!='\n');
 }
 
-void choixTrois(){
+void ChoixFichierUtilisateur(){
+    char * nomFichier = malloc (sizeof(char)*255);
+    if (nomFichier==NULL){
+        fprintf(stderr, "Erreur  d'initialisation du nom de ficher\n" );
+        return;
+    }
+
+    char chemin[512];
+
+    printf("Entrez le nom du fichier a utiliser : ");
+    viderbuffer();
+    scanf("%254s", nomFichier);
+
+    strcpy(chemin, "assets/");
+    strcat(chemin, nomFichier);
+
+
+    printf("Nom du fichier saisi : %s\n", chemin);
+
+    FILE *file = fopen(chemin, "r");
+    if (file == NULL) {
+        printf("Erreur : Le fichier %s n'existe pas ou n'est pas accessible.\n", chemin);
+        free(nomFichier);
+        return;
+    }
+    fclose(file);
+
+    AnalyseFichier(chemin);
+
+    free(nomFichier);
+}
+
+void ChoixCréationFichierUtilisateur(){
   // Creer un nouveau fichier
-            char nomFichier[MAX_LEN];
-            if(!creerFichier(nomFichier)) {
-               // echec creation
-            }
+            char *nomFichier = malloc(sizeof(char) * 255);
+
+            // Demander le nom du fichier
+            printf("Nom du fichier à créer : ");
+            fgets(nomFichier, 255, stdin);
+
+            // Supprimer le \n de la fin de la chaîne si présent
+            size_t len = strlen(nomFichier);
+            if (len > 0 && nomFichier[len - 1] == '\n') {
+                   nomFichier[len - 1] = '\0';
+               }
+
+            // Créer le fichier
+            CreerFichier(nomFichier);
+
             // Proposition de verification immediate
             printf("Voulez-vous tester la resolution sur ce fichier ? (o/n) ");
             char rep[10];
             fgets(rep, 10, stdin);
+
             if(rep[0] == 'o' || rep[0] == 'O') {
                 // On parse & BFS
                 State initial;
@@ -501,7 +553,7 @@ void choixTrois(){
                 Action actions[MAX_ACTIONS];
                 int actionCount = 0;
 
-                if(!parseFile(nomFichier, &initial, &goal, actions, &actionCount)) {
+                if(!ParseFile(nomFichier, &initial, &goal, actions, &actionCount)) {
                     printf("Erreur lors du parsing. Abandon.\n");
                 } else {
                     // Meme affichage
@@ -522,11 +574,11 @@ void choixTrois(){
                         printf(" - %s\n", actions[i].name);
                     }
 
-                    int solIndex = bfs(&initial, &goal, actions, actionCount);
+                    int solIndex = Bfs(&initial, &goal, actions, actionCount);
                     if(solIndex == -1) {
                         printf("\nAucune solution trouvee pour ce fichier.\n\n");
                     } else {
-                        reconstructPlan(solIndex, actions);
+                        ReconstructPlan(solIndex, actions);
                     }
                 }
             } else {
@@ -541,23 +593,20 @@ int main() {
     int choix=0;
 
     // Affichage ASCII
-    afficherEnteteASCII();
+    AfficherEnteteASCII();
 
     while (choix != 4){
-        choix = afficherMenu();
+        choix = AfficherMenu();
 
         switch (choix) {
             case 1:
-                choixUn();
+                ChoixFichierParDefaut();
             break;
             case 2:
-                choixDeux();
+                ChoixFichierUtilisateur();
             break;
             case 3:
-                choixTrois();
-            break;
-            case 4:
-                printf("Au revoir !\n");
+                ChoixCréationFichierUtilisateur();
             break;
             default:
                 printf("Choix invalide.\n");
