@@ -355,53 +355,61 @@ void DemanderTexte(const char* question, char* buffer, int bufferSize) {
 // finish:...
 // puis un certain nombre d'actions, chacune separee par ****
 int CreerFichier(char* nomFichier) {
-    // On demande a l'utilisateur un nom de fichier
-    DemanderTexte("Entrez le nom du fichier a creer (ex: monFichier.txt) : ", nomFichier, MAX_LEN);
 
-    FILE* fp = fopen(nomFichier, "w");
-    if(!fp) {
-        printf("Impossible de creer le fichier '%s'.\n", nomFichier);
+    printf("Entrez le nom du fichier à créer (ex: monFichier.txt) : ");
+    fgets(nomFichier, 255, stdin);
+
+    size_t len = strlen(nomFichier);
+    if (len > 0 && nomFichier[len - 1] == '\n') {
+        nomFichier[len - 1] = '\0';
+    }
+
+    char cheminComplet[512];
+    snprintf(cheminComplet, sizeof(cheminComplet), "assets/%s", nomFichier);
+
+    FILE* fp = fopen(cheminComplet, "w");
+    if (!fp) {
+        printf("Impossible de créer le fichier '%s'.\n", cheminComplet);
         return 0;
     }
 
-    // 1) Conditions initiales
     char buf[MAX_LEN];
-    DemanderTexte("Entrez les conditions initiales (separees par des virgules):\n> ", buf, MAX_LEN);
+    DemanderTexte("Entrez les conditions initiales (séparées par des virgules):\n> ", buf, MAX_LEN);
     fprintf(fp, "start:%s\n", buf);
 
-    // 2) Conditions d'arrivee
-    DemanderTexte("Entrez les conditions d'arrivee (finish), separees par des virgules:\n> ", buf, MAX_LEN);
+    DemanderTexte("Entrez les conditions d'arrivée (finish), séparées par des virgules:\n> ", buf, MAX_LEN);
     fprintf(fp, "finish:%s\n", buf);
 
-    // 3) Combien d'actions ?
     int nbActions = 0;
     printf("Combien d'actions voulez-vous saisir ? ");
     scanf("%d", &nbActions);
-    getchar(); // flush \n
+    getchar();
 
-    for(int i=0; i<nbActions; i++){
+    for (int i = 0; i < nbActions; i++) {
         fprintf(fp, "****\n");
         // Action (nom)
         DemanderTexte("\nNom de l'action : ", buf, MAX_LEN);
         fprintf(fp, "action:%s\n", buf);
 
-        // preconds
-        DemanderTexte("Preconditions (separees par des virgules) : ", buf, MAX_LEN);
+        // Préconditions
+        DemanderTexte("Préconditions (séparées par des virgules) : ", buf, MAX_LEN);
         fprintf(fp, "preconds:%s\n", buf);
 
-        // add
-        DemanderTexte("Faits ajoutes (separes par des virgules) : ", buf, MAX_LEN);
+        // Faits ajoutés
+        DemanderTexte("Faits ajoutés (séparés par des virgules) : ", buf, MAX_LEN);
         fprintf(fp, "add:%s\n", buf);
 
-        // delete
-        DemanderTexte("Faits supprimes (separes par des virgules) : ", buf, MAX_LEN);
+        // Faits supprimés
+        DemanderTexte("Faits supprimés (séparés par des virgules) : ", buf, MAX_LEN);
         fprintf(fp, "delete:%s\n", buf);
     }
 
     fclose(fp);
-    printf("\nFichier '%s' cree avec succes.\n", nomFichier);
+    printf("\nFichier '%s' créé avec succès dans le dossier 'assets'.\n", cheminComplet);
     return 1;
 }
+
+
 
 //// Fonction qui analyse le fichier passer en parametre
 /// sans retour
@@ -496,54 +504,69 @@ void ChoixFichierUtilisateur(){
 
 
 void ChoixCréationFichierUtilisateur(){
-  // Creer un nouveau fichier
-            char nomFichier[MAX_LEN];
-            if(!CreerFichier(nomFichier)) {
-               // echec creation
+    // Creer un nouveau fichier
+    char *nomFichier = malloc(sizeof(char) * 255);
+
+    // Demander le nom du fichier
+    printf("Nom du fichier à créer : ");
+    fgets(nomFichier, 255, stdin);
+
+    // Supprimer le \n de la fin de la chaîne si présent
+    size_t len = strlen(nomFichier);
+    if (len > 0 && nomFichier[len - 1] == '\n') {
+        nomFichier[len - 1] = '\0';
+    }
+
+    // Créer le fichier
+    CreerFichier(nomFichier);
+
+    // Proposition de vérification immédiate
+    printf("Voulez-vous tester la résolution sur ce fichier ? (o/n) ");
+    char rep[10];
+    fgets(rep, 10, stdin);
+
+    if (rep[0] == 'o' || rep[0] == 'O') {
+        // On parse & BFS
+        State initial;
+        Goal goal;
+        Action actions[MAX_ACTIONS];
+        int actionCount = 0;
+
+        if (!ParseFile(nomFichier, &initial, &goal, actions, &actionCount)) {
+            printf("Erreur lors du parsing. Abandon.\n");
+        } else {
+            // Même affichage
+            printf("\n=== ETAT INITIAL (START) ===\n");
+            printf("Nombre de faits: %d\n", initial.factCount);
+            for (int i = 0; i < initial.factCount; i++) {
+                printf(" - %s\n", initial.facts[i]);
             }
-            // Proposition de verification immediate
-            printf("Voulez-vous tester la resolution sur ce fichier ? (o/n) ");
-            char rep[10];
-            fgets(rep, 10, stdin);
-            if(rep[0] == 'o' || rep[0] == 'O') {
-                // On parse & BFS
-                State initial;
-                Goal goal;
-                Action actions[MAX_ACTIONS];
-                int actionCount = 0;
 
-                if(!ParseFile(nomFichier, &initial, &goal, actions, &actionCount)) {
-                    printf("Erreur lors du parsing. Abandon.\n");
-                } else {
-                    // Meme affichage
-                    printf("\n=== ETAT INITIAL (START) ===\n");
-                    printf("Nombre de faits: %d\n", initial.factCount);
-                    for(int i=0; i<initial.factCount; i++){
-                        printf(" - %s\n", initial.facts[i]);
-                    }
+            printf("\n=== OBJECTIF (FINISH) ===\n");
+            printf("Nombre de faits: %d\n", goal.factCount);
+            for (int i = 0; i < goal.factCount; i++) {
+                printf(" - %s\n", goal.facts[i]);
+            }
 
-                    printf("\n=== OBJECTIF (FINISH) ===\n");
-                    printf("Nombre de faits: %d\n", goal.factCount);
-                    for(int i=0; i<goal.factCount; i++){
-                        printf(" - %s\n", goal.facts[i]);
-                    }
+            printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
+            for (int i = 0; i < actionCount; i++) {
+                printf(" - %s\n", actions[i].name);
+            }
 
-                    printf("\n=== ACTIONS DISPONIBLES (%d) ===\n", actionCount);
-                    for(int i=0; i<actionCount; i++){
-                        printf(" - %s\n", actions[i].name);
-                    }
-
-                    int solIndex = Bfs(&initial, &goal, actions, actionCount);
-                    if(solIndex == -1) {
-                        printf("\nAucune solution trouvee pour ce fichier.\n\n");
-                    } else {
-                        ReconstructPlan(solIndex, actions);
-                    }
-                }
+            int solIndex = Bfs(&initial, &goal, actions, actionCount);
+            if (solIndex == -1) {
+                printf("\nAucune solution trouvée pour ce fichier.\n\n");
             } else {
-                printf("Ok, fichier cree, pas de verification. Retour au menu.\n");
+                ReconstructPlan(solIndex, actions);
             }
         }
+    } else {
+        printf("Ok, fichier créé, pas de vérification. Retour au menu.\n");
+    }
+
+    free(nomFichier);  // Ne pas oublier de libérer la mémoire allouée
+}
+
 
 // ---------------------------------------------------------------------
 // 7) Programme principal
