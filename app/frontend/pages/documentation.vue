@@ -219,6 +219,6 @@ definePageMeta({
 }
 
 code {
-  @apply bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono;
+  @apply bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm font-mono;
 }
 </style>

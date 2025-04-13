@@ -36,13 +36,13 @@
                 </CardHeader>
                 <CardContent>
                     <div class="flex flex-col items-center justify-center space-y-6">
-                        <div class="w-full h-[400px] bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                        <div class="w-full h-[400px] bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center">
                             <TurnstileWidget @verify="handleVerify" />
                         </div>
-                        <p class="text-center text-gray-600 dark:text-gray-400">
+                        <p class="text-center text-neutral-600 dark:text-neutral-400">
                             Veuillez compléter le challenge de sécurité pour accéder à l'application.
                         </p>
-                        <div v-if="debugMode" class="debug-panel p-4 bg-gray-100 dark:bg-gray-800 rounded-lg w-full">
+                        <div v-if="debugMode" class="debug-panel p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg w-full">
                             <h3 class="font-bold mb-2">Informations de débogage:</h3>
                             <p>Clé Turnstile: {{ config.public.turnstileSiteKey || 'Non définie' }}</p>
                             <p>API URL: {{ config.public.apiUrl || 'Non définie' }}</p>
