@@ -13,14 +13,9 @@ export default defineNuxtConfig({
     '@nuxtjs/turnstile'
   ],
   css: ['~/assets/css/tailwind.css'],
-  vite: {
-    plugins: [
-      tailwindcss(),
-    ],
-  },
   postcss: {
     plugins: {
-      '@tailwindcss/postcss': {},
+      tailwindcss: {},
       autoprefixer: {},
     },
   },
