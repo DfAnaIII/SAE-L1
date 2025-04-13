@@ -15,8 +15,16 @@ export default defineNuxtConfig({
   css: ['~/assets/css/tailwind.css'],
   vite: {
     plugins: [
-      tailwindcss(),
+      tailwindcss({
+        config: './tailwind.config.ts'
+      }),
     ],
+  },
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
   },
   shadcn: {
     /**
