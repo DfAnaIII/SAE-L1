@@ -2,6 +2,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Installer les dépendances système nécessaires pour better-sqlite3
+RUN apk add --no-cache python3 make g++ gcc sqlite-dev
+
 # Installer les dépendances
 COPY package.json package-lock.json ./
 RUN npm install
