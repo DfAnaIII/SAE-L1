@@ -3,35 +3,21 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
+
   modules: [
     '@nuxt/content',
     '@nuxt/fonts',
-    '@nuxt/test-utils',
+    '@nuxt/icon',
+    '@nuxt/scripts',
     'shadcn-nuxt',
     '@nuxtjs/turnstile'
   ],
-
-  turnstile: {
-    siteKey: process.env.NUXT_PUBLIC_TURNSTILE_SITE_KEY || '',
-    addValidateEndpoint: true
-  },
-
-  runtimeConfig: {
-    turnstile: {
-      secretKey: process.env.NUXT_TURNSTILE_SECRET_KEY || ''
-    },
-    public: {
-      apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:3000'
-    }
-  },
-
   css: ['~/assets/css/tailwind.css'],
   vite: {
     plugins: [
       tailwindcss(),
     ],
   },
-
   shadcn: {
     /**
      * Prefix for all the imported component
@@ -42,5 +28,15 @@ export default defineNuxtConfig({
      * @default "./components/ui"
      */
     componentDir: './components/ui'
+  },
+  turnstile: {
+    siteKey: process.env.CLOUDFLARE_SITE_KEY
+  },
+  runtimeConfig: {
+    turnstileSecretKey: process.env.CLOUDFLARE_SECRET_KEY,
+    public: {
+      apiUrl: process.env.API_URL || 'http://localhost:4000',
+      turnstileSiteKey: process.env.CLOUDFLARE_SITE_KEY
+    }
   }
 })
