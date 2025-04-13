@@ -8,13 +8,14 @@ RUN apk add --no-cache python3 make g++ gcc sqlite-dev
 # Installer les dépendances
 COPY package.json package-lock.json ./
 RUN npm install
-# RUN npm install tailwindcss @tailwindcss/postcss postcss
 # Copier le reste des fichiers de l'application
 COPY . .
 
-# S'assurer que nous avons les plugins PostCSS nécessaires pour Tailwind
-RUN npm uninstall tailwindcss postcss autoprefixer
-RUN npm install -D tailwindcss@latest @tailwindcss/postcss7-compat postcss@^8.0.0 autoprefixer@^10.0.0
+# S'assurer que la configuration Tailwind est correcte
+RUN rm -f postcss.config.js
+# Créer un fichier postcss.config.cjs en CommonJS
+RUN echo "module.exports = { plugins: { 'postcss-import': {}, tailwindcss: {}, autoprefixer: {} } }" > postcss.config.cjs
+RUN npm install -D postcss-import
 
 # Construire l'application
 RUN npm run build
