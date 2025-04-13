@@ -139,4 +139,14 @@ process.on('uncaughtException', (err) => {
     }
 });
 
+// Chercher les connexions Redis et mettre à jour avec le mot de passe
+// Exemple de code à modifier:
+/*
+const redis = require('redis');
+const client = redis.createClient({
+  url: process.env.REDIS_URL,
+  password: process.env.REDIS_PASSWORD
+});
+*/
+
 module.exports = app;

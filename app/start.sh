@@ -18,4 +18,4 @@ docker-compose build
 echo "Démarrage des conteneurs..."
 docker-compose up -d
 
-echo "Application démarrée! Frontend sur http://localhost:3000, Backend sur http://localhost:4000" 
+echo "Application démarrée! Frontend sur http://localhost:3030, Backend sur http://localhost:4030" 
