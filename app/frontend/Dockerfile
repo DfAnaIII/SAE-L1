@@ -8,6 +8,7 @@ RUN apk add --no-cache python3 make g++ gcc sqlite-dev
 # Installer les dépendances
 COPY package.json package-lock.json ./
 RUN npm install
+RUN npm install tailwindcss @tailwindcss/postcss postcss
 # Copier le reste des fichiers de l'application
 COPY . .
 
