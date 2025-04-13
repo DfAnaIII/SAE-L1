@@ -51,10 +51,9 @@
 
 @layer base {
   * {
-    @apply border-gray-200;
-    outline: none;
+    @apply border-border;
   }
   body {
-    @apply bg-white text-gray-800;
+    @apply bg-background text-foreground;
   }
 }
