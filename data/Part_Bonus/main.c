@@ -3,7 +3,36 @@
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
-#include <sys/time.h>
+
+// Gestion des mesures de temps pour portabilité Windows/Linux
+#ifdef _WIN32
+    #include <windows.h>
+    // Définition d'une structure similaire à timeval pour Windows
+    struct timeval {
+        long tv_sec;
+        long tv_usec;
+    };
+    
+    // Fonction équivalente à gettimeofday pour Windows
+    void gettimeofday(struct timeval* tv, void* tz) {
+        SYSTEMTIME st;
+        GetSystemTime(&st);
+        FILETIME ft;
+        SystemTimeToFileTime(&st, &ft);
+        ULARGE_INTEGER ul;
+        ul.LowPart = ft.dwLowDateTime;
+        ul.HighPart = ft.dwHighDateTime;
+        // Conversion en secondes et microsecondes depuis le 1er janvier 1970
+        // Windows utilise le 1er janvier 1601 comme référence
+        // Différence = 11644473600 secondes
+        ul.QuadPart -= 116444736000000000ULL;
+        ul.QuadPart /= 10;  // Conversion en microsecondes
+        tv->tv_sec = (long)(ul.QuadPart / 1000000UL);
+        tv->tv_usec = (long)(ul.QuadPart % 1000000UL);
+    }
+#else
+    #include <sys/time.h>
+#endif
 
 // ---------------------------------------------------------------------
 // Configuration / limites
@@ -63,6 +92,46 @@ int DEBUG_MODE = 1;        // Mode débug activé par défaut
 #define MODE_ALEATOIRE 2
 #define MODE_PRIORITE 3
 #define MODE_MEANS_END 4
+
+// ---------------------------------------------------------------------
+// Prototypes des fonctions
+// ---------------------------------------------------------------------
+// Fonctions utilitaires
+void Trim(char* str);
+void SplitFacts(const char* line, State* state);
+int StateContainsAll(const State* st, const State* subset);
+int CanApply(const State* st, const Action* action);
+void ApplyAction(const State* st, const Action* action, State* newState);
+bool SameState(const State* a, const State* b);
+int IsGoalReached(const State* st, const Goal* goal);
+int ParseFile(const char* filename, State* initial, Goal* goal, Action* actions, int* actionCount);
+void ReconstructPlan(int solutionIndex, Action* actions);
+void DemanderTexte(const char* question, char* buffer, int bufferSize);
+int CreerFichier(char* nomFichier);
+
+// Fonctions pour la partie 5
+void GenererProblemeBlocs(int nblocs);
+void MelangerRegles(Action* actions, int actionCount);
+int* TrouverReglesApplicables(const State* state, Action* actions, int actionCount, int* nbApplicables);
+int* ConstuireTableauPriorite(const State* state, Action* actions, int actionCount, int* tailleTableau);
+int CalculerDistanceAuBut(const State* state, const Goal* goal);
+int ChoisirMeilleureRegle(const State* state, const Goal* goal, Action* actions, int actionCount);
+int BfsAmeliore(const State* start, const Goal* goal, Action* actions, int actionCount, int mode);
+void InitialiserPriorites(Action* actions, int actionCount);
+void AnalyseFichierAvecStrategie(const char *nomfile, int mode);
+
+// Fonctions pour les menus
+int AfficherMenu();
+int AfficherMenuPartie5();
+int AfficherMenuStrategies();
+void MenuGenerationBlocs();
+void MenuRechercheProbleme();
+void MenuComparaison();
+void GestionPartie5();
+void ChoixFichierParDefaut();
+void viderbuffer();
+void ChoixFichierUtilisateur();
+void ChoixCréationFichierUtilisateur();
 
 // ---------------------------------------------------------------------
 // 1) Affichage ASCII de présentation
