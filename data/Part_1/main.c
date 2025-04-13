@@ -23,6 +23,10 @@ typedef struct {
     char facts[MAX_FACTS][MAX_LEN]; ///< Liste des faits
 } State;
 
+// L'objectif (finish) est un ensemble de faits (même structure que State)
+
+typedef State Goal;
+
 /**
  * @brief Représente une action avec ses préconditions et effets
  */
@@ -72,6 +76,7 @@ int parseLine(const char* source, char target[][MAX_LEN]) {
  * @param actionCount Compteur d'actions
  * @return true si chargement réussi, false sinon
  */
+
 bool loadProblemFile(const char* filename, State* initial, Goal* goal, 
                     Action* actions, int* actionCount) {
     FILE* fp = fopen(filename, "r");
