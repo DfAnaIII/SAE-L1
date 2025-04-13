@@ -155,7 +155,7 @@ int main() {
     Action actions[MAX_ACTIONS];
     int actionCount = 0;
 
-    if(!loadProblemFile("monkeys.txt", &initial, &goal, actions, &actionCount)) {
+    if(!loadProblemFile("assets/monkey.txt", &initial, &goal, actions, &actionCount)) {
         return EXIT_FAILURE;
     }
 
