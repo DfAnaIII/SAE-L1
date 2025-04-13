@@ -201,6 +201,12 @@ void afficherSolution(Etat etats[], Regle regles[], int indice_solution) {
         indice = etats[indice].parent;
     }
     
+    // Si longueur = 0, aucune étape n'a été trouvée
+    if(longueur == 0) {
+        printf("\nAucune solution trouvée. Les buts étaient peut-être déjà satisfaits dans l'état initial.\n");
+        return;
+    }
+    
     printf("\n+------------------PLAN TROUVE------------------+\n|\n");
     printf("| Solution trouvée (%d étapes):\n", longueur);
     for(int i = longueur - 1; i >= 0; i--) {
