@@ -359,3 +359,62 @@ int main() {
     return EXIT_SUCCESS;
 }
 
+<<<<<<< Updated upstream
+=======
+/**
+ * Affiche la solution trouvée
+ */
+void afficherSolution(Etat etats[], int indice_solution) {
+    if(indice_solution < 0) {
+        printf("Aucune solution trouvée.\n");
+        return;
+    }
+    
+    // Reconstruit le chemin de la solution
+    int chemin[MAX_ETATS];
+    int longueur = 0;
+    int indice = indice_solution;
+    
+    while(indice > 0) {
+        chemin[longueur++] = indice;
+        indice = etats[indice].parent;
+    }
+    
+    printf("\nSolution trouvée (%d étapes):\n", longueur);
+    for(int i = longueur - 1; i >= 0; i--) {
+        printf("- %s\n", etats[chemin[i]].action_precedente);
+    }
+}
+
+int main() {
+    Regle regles[MAX_REGLES];
+    string faits_initiaux[MAX_MOTS];
+    string buts[MAX_MOTS];
+    Etat etats[MAX_ETATS];
+    int nb_etats = 1;  // L'état initial est déjà compté
+
+    // Chargement des données (réutilisation du code de la Partie 1)
+    int nb_regles = chargerRegles("assets/regles.txt", regles);
+    int nb_faits = chargerFaits("assets/faits.txt", faits_initiaux);
+    int nb_buts = chargerFaits("assets/buts.txt", buts);
+    
+    // Initialisation de l'état initial
+    etats[0].nb_faits = nb_faits;
+    etats[0].parent = -1;
+    strcpy(etats[0].action_precedente, "Etat initial");
+    for(int i = 0; i < nb_faits; i++) {
+        strcpy(etats[0].faits[i], faits_initiaux[i]);
+    }
+    
+    // Recherche d'une solution
+    int solution = rechercheSolution(etats, &nb_etats, regles, nb_regles, buts, nb_buts);
+    
+    // Affichage de la solution
+    afficherSolution(etats, solution);
+    
+    printf("\nStatistiques:\n");
+    printf("- Nombre d'états explorés: %d\n", nb_etats);
+    
+    return 0;
+}
+>>>>>>> Stashed changes
