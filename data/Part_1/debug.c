@@ -24,6 +24,10 @@ typedef struct {
     char facts[MAX_FACTS][MAX_LEN]; ///< Liste des faits
 } State;
 
+// L'objectif (finish) est un ensemble de faits (même structure que State)
+
+typedef State Goal;
+
 /**
  * @brief Représente une action avec ses préconditions et effets
  */
@@ -169,7 +173,7 @@ int main() {
 
     double fileOpenTime = getCurrentTime();
     printf("[DEBUG] Début du chargement du fichier...\n");
-    bool loadStatus = loadProblemFile("monkeys.txt", &initial, &goal, actions, &actionCount);
+    bool loadStatus = loadProblemFile("assets/monkey.txt", &initial, &goal, actions, &actionCount);
     printf("[DEBUG] Chargement terminé en %.2f ms\n", getCurrentTime() - fileOpenTime);
 
     if(!loadStatus) {
