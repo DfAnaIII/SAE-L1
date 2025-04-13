@@ -632,6 +632,38 @@ void analyseFichierDebug(const char *nomFichier) {
     printf("| Nombre d'états explorés: %d\n", nb_etats);
     printf("| Temps d'exécution: %.2f ms\n", temps_ms);
     printf("+--------------------------------+\n");
+    
+    // Afficher clairement les étapes de la solution à la fin
+    if(solution >= 0) {
+        // Reconstruit le chemin de la solution
+        int chemin[MAX_ETATS];
+        int longueur = 0;
+        int indice = solution;
+        
+        while(indice > 0) {
+            chemin[longueur++] = indice;
+            indice = etats[indice].parent;
+        }
+        
+        printf("\n+===========================================================+\n");
+        printf("|                 RÉSUMÉ DES ÉTAPES FINALES                 |\n");
+        printf("+===========================================================+\n");
+        
+        if(longueur == 0) {
+            printf("| Aucune étape nécessaire, les buts étaient déjà satisfaits |\n");
+        } else {
+            for(int i = longueur - 1; i >= 0; i--) {
+                int regle_idx = etats[chemin[i]].regle_appliquee;
+                printf("| Étape %2d: %-50s |\n", longueur - i, regles[regle_idx].action);
+            }
+        }
+        
+        printf("+===========================================================+\n");
+    } else {
+        printf("\n+===========================================================+\n");
+        printf("|                  AUCUNE SOLUTION TROUVÉE                  |\n");
+        printf("+===========================================================+\n");
+    }
 }
 
 /**
