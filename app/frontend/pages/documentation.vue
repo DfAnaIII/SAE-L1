@@ -1,37 +1,5 @@
 <template>
-    <div class="flex flex-col items-center min-h-screen">
-        <!-- Header fixe avec effet glassmorphism -->
-        <div class="header-glass fixed top-0 left-0 w-full flex flex-row items-center justify-between px-6 py-2 z-50">
-            <!-- Élément vide pour équilibrer la flexbox -->
-            <div class="w-[150px]"></div>
-            
-            <!-- Titre centré -->
-            <div class="flex text-center tracking-tighter text-2xl font-bold py-4">
-                 <h1>SAE - Projet :<br> Ana D'erfurth et SILVA Florian</h1>
-            </div>
-            
-            <!-- Boutons à droite -->
-            <div class="flex items-center gap-4 w-[180px] justify-end pr-6">
-                <Button as-child variant="ghost" class="glass-button">
-                    <a href="/">
-                        Menu Principal
-                    </a> 
-                </Button>
-                <Button as-child variant="ghost" class="glass-button">
-                    <a href="https://github.com/DfAnaIII/SAE-L1" target="_blank">
-                        <Icon name="mdi:github" />
-                    </a> 
-                </Button>
-                <Button @click="toggleTheme" variant="ghost" class="glass-button">
-                    <Icon name="mdi:theme-light-dark" />
-                </Button>
-            </div>
-        </div>
-
-        <!-- Espace pour éviter que le contenu soit caché sous le header fixe -->
-        <div class="mt-32"></div>
-
-        <!-- Contenu de la documentation -->
+    <NuxtLayout>
         <div class="container mx-auto px-4 pb-16 max-w-5xl">
             <Card class="mb-8">
                 <CardHeader>
@@ -208,20 +176,14 @@
                 </CardContent>
             </Card>
         </div>
-    </div>
+    </NuxtLayout>
 </template>
 
-
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-
-function toggleTheme() {
-    const theme = document.documentElement.getAttribute('class');
-    document.documentElement.setAttribute('class', theme === 'dark' ? 'light' : 'dark');
-}
-
+// Appliquer le middleware d'authentification à cette page
+definePageMeta({
+    middleware: ['auth']
+});
 </script>
 
 <style scoped>
