@@ -405,7 +405,7 @@ int creerFichier(char* nomFichier) {
 
 void choixUn(){
     // Fichier par defaut : monkey.txt
-    const char* defaultFile = "monkey.txt";
+    const char* defaultFile = "assets/monkey.txt";
     State initial;
     Goal goal;
     Action actions[MAX_ACTIONS];
