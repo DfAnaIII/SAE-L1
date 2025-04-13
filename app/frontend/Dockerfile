@@ -12,8 +12,8 @@ RUN npm install
 COPY . .
 
 # Créer un fichier postcss.config.js compatible avec Tailwind v4
-RUN echo "module.exports = { plugins: { tailwindcss: {}, autoprefixer: {} } }" > postcss.config.js
-RUN npm install -D tailwindcss@latest autoprefixer@latest postcss@latest
+RUN echo "module.exports = { plugins: { '@tailwindcss/postcss': {}, autoprefixer: {} } }" > postcss.config.js
+RUN npm install -D tailwindcss@latest @tailwindcss/postcss autoprefixer@latest postcss@latest
 
 # Construire l'application
 RUN npm run build
