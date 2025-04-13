@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define MAX_LIGNE 256
 #define MAX_MOTS 50
@@ -102,9 +103,17 @@ int rechercheSolutionBacktrack(Etat etats[], int *nb_etats, Regle regles[], int 
     int possible = 1;
     int IR = 0;  // Indice à partir duquel on cherche une règle applicable
     int etat_courant = 0;
+    int max_profondeur = 100; // Limite de profondeur pour éviter les boucles infinies
+    int profondeur_actuelle = 0;
     
-    while(possible && !butsAtteints(&etats[etat_courant], buts, nb_buts)) {
+    while(possible && !butsAtteints(&etats[etat_courant], buts, nb_buts) && profondeur_actuelle < max_profondeur) {
         int regle_trouvee = 0;
+        
+        // Sécurité : vérifier si on a atteint la limite du tableau des états
+        if(*nb_etats >= MAX_ETATS - 1) {
+            printf("\nATTENTION: Limite du nombre d'états atteinte (%d). Arrêt de la recherche.\n", MAX_ETATS);
+            return -1;
+        }
         
         // Cherche une règle applicable d'indice > IR
         for(int i = IR; i < nb_regles; i++) {
@@ -113,11 +122,42 @@ int rechercheSolutionBacktrack(Etat etats[], int *nb_etats, Regle regles[], int 
                 etats[*nb_etats].parent = etat_courant;
                 appliquerRegle(&regles[i], &etats[etat_courant], &etats[*nb_etats]);
                 
-                etat_courant = *nb_etats;
-                (*nb_etats)++;
-                IR = 0;  // Réinitialise IR pour le nouvel état
-                regle_trouvee = 1;
-                break;
+                // Vérifier si le nouvel état est identique à un état déjà visité
+                int etat_deja_visite = 0;
+                for(int j = 0; j < *nb_etats; j++) {
+                    int identique = 1;
+                    if(etats[j].nb_faits != etats[*nb_etats].nb_faits) {
+                        identique = 0;
+                    } else {
+                        for(int k = 0; k < etats[j].nb_faits; k++) {
+                            int trouve = 0;
+                            for(int l = 0; l < etats[*nb_etats].nb_faits; l++) {
+                                if(strcmp(etats[j].faits[k], etats[*nb_etats].faits[l]) == 0) {
+                                    trouve = 1;
+                                    break;
+                                }
+                            }
+                            if(!trouve) {
+                                identique = 0;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if(identique) {
+                        etat_deja_visite = 1;
+                        break;
+                    }
+                }
+                
+                if(!etat_deja_visite) {
+                    etat_courant = *nb_etats;
+                    (*nb_etats)++;
+                    profondeur_actuelle++;
+                    IR = 0;  // Réinitialise IR pour le nouvel état
+                    regle_trouvee = 1;
+                    break;
+                }
             }
         }
         
@@ -126,11 +166,17 @@ int rechercheSolutionBacktrack(Etat etats[], int *nb_etats, Regle regles[], int 
                 // Backtrack: revient à l'état précédent
                 IR = etats[etat_courant].regle_appliquee + 1;
                 etat_courant = etats[etat_courant].parent;
-                (*nb_etats)--;  // Oublie l'état courant
+                profondeur_actuelle--;
+                // Ne pas décrémenter nb_etats car on veut garder trace de tous les états explorés
             } else {
                 possible = 0;  // Aucune solution trouvée
             }
         }
+    }
+    
+    if(profondeur_actuelle >= max_profondeur) {
+        printf("\nATTENTION: Profondeur maximale atteinte (%d). La recherche a été arrêtée.\n", max_profondeur);
+        return -1;
     }
     
     return possible ? etat_courant : -1;
@@ -420,14 +466,23 @@ void analyseFichier(const char *nomFichier) {
         strcpy(etats[0].faits[i], faits_initiaux[i]);
     }
     
+    // Mesure du temps d'exécution
+    clock_t debut = clock();
+    
     // Recherche d'une solution avec backtracking
     int solution = rechercheSolutionBacktrack(etats, &nb_etats, regles, nb_regles, buts, nb_buts);
+    
+    // Calcul du temps d'exécution
+    clock_t fin = clock();
+    double temps_ms = (double)(fin - debut) * 1000.0 / CLOCKS_PER_SEC;
     
     // Affichage de la solution
     afficherSolution(etats, regles, solution);
     
-    printf("\nStatistiques:\n");
-    printf("- Nombre d'états explorés: %d\n", nb_etats);
+    printf("\n+----------STATISTIQUES----------+\n");
+    printf("| Nombre d'états explorés: %d\n", nb_etats);
+    printf("| Temps d'exécution: %.2f ms\n", temps_ms);
+    printf("+--------------------------------+\n");
 }
 
 /**
