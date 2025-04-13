@@ -12,31 +12,31 @@ add:chevre_gauche, berger_gauche
 delete:chevre_droite, berger_droite
 ****
 action:Traverser avec le loup vers la droite
-preconds:loup_gauche, berger_gauche, chevre_droite
+preconds:loup_gauche, berger_gauche, chou_droite
 add:loup_droite, berger_droite
 delete:loup_gauche, berger_gauche
 ****
 action:Traverser avec le loup vers la gauche
-preconds:loup_droite, berger_droite, chevre_gauche
+preconds:loup_droite, berger_droite, chou_gauche
 add:loup_gauche, berger_gauche
 delete:loup_droite, berger_droite
 ****
 action:Traverser avec le chou vers la droite
-preconds:chou_gauche, berger_gauche, chevre_droite
+preconds:chou_gauche, berger_gauche, loup_droite
 add:chou_droite, berger_droite
 delete:chou_gauche, berger_gauche
 ****
 action:Traverser avec le chou vers la gauche
-preconds:chou_droite, berger_droite, chevre_gauche
+preconds:chou_droite, berger_droite, loup_gauche
 add:chou_gauche, berger_gauche
 delete:chou_droite, berger_droite
 ****
 action:Traverser seul vers la droite
-preconds:berger_gauche, loup_droite, chevre_droite
+preconds:berger_gauche, loup_droite, chou_droite
 add:berger_droite
 delete:berger_gauche
 ****
 action:Traverser seul vers la gauche
-preconds:berger_droite, loup_gauche, chevre_gauche
+preconds:berger_droite, loup_gauche, chou_gauche
 add:berger_gauche
 delete:berger_droite
