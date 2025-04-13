@@ -22,5 +22,26 @@
 
 ## Documentation
 
-[✨Lien vers la documentation](https://sae.gofindr.fr/documentation)
+[✨Lien vers la documentation en ligne](https://sae.gofindr.fr/documentation)
+
+[📄Documentation du projet](./DOCUMENTATION.md)
+
+## Installation et utilisation
+
+Pour installer et utiliser ce projet, veuillez consulter la [documentation détaillée](./DOCUMENTATION.md) qui contient toutes les instructions pour:
+
+- Compiler et exécuter chaque partie du projet
+- Comprendre les solutions implémentées
+- Explorer les différentes fonctionnalités
+
+## À propos du projet
+
+Ce projet implémente un système GPS (General Problem Solver) en langage C. Le système est capable de résoudre des problèmes en utilisant une approche de planification basée sur des états, des actions et des règles.
+
+Le projet est divisé en plusieurs parties:
+- Partie 1: Parsing et structures de données
+- Partie 2: Implémentation de l'algorithme GPS
+- Partie 3: Optimisations et améliorations
+- Partie 4: Interface utilisateur avancée
+- Partie Bonus: Extensions et expérimentations
 
