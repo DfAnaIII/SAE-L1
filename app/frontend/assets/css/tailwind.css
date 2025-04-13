@@ -1,5 +1,4 @@
-@tailwind base;
-@tailwind components;
+@import "tailwindcss/preflight";
 @tailwind utilities;
 @import "tw-animate-css";
 
@@ -93,9 +92,9 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-zinc-200 outline-none;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white text-gray-800;
   }
 }
