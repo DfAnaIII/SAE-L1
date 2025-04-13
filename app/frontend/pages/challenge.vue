@@ -104,7 +104,7 @@ onBeforeMount(async () => {
                     // Si la session est invalide, on la supprime
                     localStorage.removeItem('sessionId')
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Erreur lors de la vérification de la session:', error)
                 debugStatus.value = `Erreur: ${error.message}`
             }
@@ -139,7 +139,7 @@ const handleVerify = async (token: string) => {
             console.error('Échec de la validation:', error)
             debugStatus.value = `Échec: ${error.error || 'Erreur de validation'}`
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Erreur lors de la vérification du challenge:', error)
         debugStatus.value = `Erreur: ${error.message}`
     }
