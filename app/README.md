@@ -1,63 +1,83 @@
-# SAE-L1 Application
+# SAE Projet - Analyseur de Fichiers avec Protection Turnstile
 
-Cette application est construite avec Nuxt.js pour le frontend et Go pour le backend, utilisant Redis pour le stockage des sessions.
+Projet développé par Ana D'erfurth et Florian SILVA.
 
-## Prérequis
+## Architecture
 
-- Docker et Docker Compose
-- Compte Cloudflare avec Turnstile activé
+Ce projet est composé de trois parties principales :
+
+1. **Frontend** (Nuxt 3 + Shadcn UI) : Interface utilisateur permettant de soumettre des fichiers et d'afficher les résultats d'analyse.
+2. **Backend** (Node.js) : API qui gère l'authentification via Turnstile et exécute l'analyse des fichiers.
+3. **Redis** : Stockage pour les sessions et autres données temporaires.
 
 ## Configuration
 
-1. Clonez le dépôt :
-```bash
-git clone https://github.com/DfAnaIII/SAE-L1.git
-cd SAE-L1
-```
+### Prérequis
 
-2. Créez un fichier `.env` à la racine du projet avec vos clés Cloudflare :
-```env
-CLOUDFLARE_SITE_KEY=votre_clé_site_cloudflare
-CLOUDFLARE_SECRET_KEY=votre_clé_secrète_cloudflare
-```
+- Docker et Docker Compose
+- Clé de site et clé secrète Cloudflare Turnstile
 
-## Démarrage
+### Variables d'environnement
 
-Pour lancer l'application en mode développement :
-
-```bash
-docker-compose up --build
-```
-
-L'application sera accessible à :
-- Frontend : http://localhost:3000
-- Backend : http://localhost:4000
-- Redis : localhost:6379
-
-## Structure du Projet
+Créez ou modifiez le fichier `.env` à la racine du projet avec les variables suivantes :
 
 ```
-app/
-├── frontend/          # Application Nuxt.js
-├── backend/          # Serveur Go
-│   └── script/      # Scripts C
-├── docker-compose.yml
-└── .env
+CLOUDFLARE_SITE_KEY=votre_cle_de_site_turnstile
+CLOUDFLARE_SECRET_KEY=votre_cle_secrete_turnstile
 ```
+
+## Démarrage rapide
+
+### Avec le script de démarrage
+
+1. Rendez le script exécutable :
+   ```
+   chmod +x start.sh
+   ```
+
+2. Exécutez le script :
+   ```
+   ./start.sh
+   ```
+
+### Manuellement
+
+1. Construisez les images Docker :
+   ```
+   docker-compose build
+   ```
+
+2. Démarrez les conteneurs :
+   ```
+   docker-compose up -d
+   ```
+
+## Accès à l'application
+
+- **Frontend** : http://localhost:3000
+- **Backend API** : http://localhost:4000
 
 ## Fonctionnalités
 
-- Authentification via Cloudflare Turnstile
-- Gestion des sessions avec Redis
-- Interface utilisateur responsive avec thème sombre/clair
-- Compilation et exécution de scripts C
+- **Protection Turnstile** : Chaque utilisateur doit passer une vérification Turnstile avant d'accéder à l'application.
+- **Analyse de fichiers** : Soumettez un fichier pour analyse par le programme C compilé.
+- **Interface réactive** : Design moderne avec thème clair/sombre.
 
-## Sécurité
+## Maintenance
 
-- Protection contre les attaques DDoS via Cloudflare Turnstile
-- Stockage sécurisé des sessions dans Redis
-- Validation des entrées côté serveur
+- Pour arrêter les conteneurs :
+  ```
+  docker-compose down
+  ```
 
-## Contribution
+- Pour voir les logs :
+  ```
+  docker-compose logs -f
+  ```
 
-Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou un pull request. 
+## Structure du projet
+
+- `/frontend` : Application Nuxt 3
+- `/backend` : API Node.js
+- `docker-compose.yml` : Configuration Docker Compose
+- `.env` : Variables d'environnement 

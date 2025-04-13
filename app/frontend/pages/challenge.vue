@@ -12,13 +12,13 @@
             
             <!-- Boutons à droite -->
             <div class="flex items-center gap-4 w-[180px] justify-end pr-6">
+                <button @click="toggleTheme" class="glass-button p-2 rounded-md">
+                    <Icon name="mdi:theme-light-dark" />
+                </button>
                 <Button as-child variant="ghost" class="glass-button">
                     <a href="https://github.com/DfAnaIII/SAE-L1" target="_blank">
                         <Icon name="mdi:github" />
                     </a> 
-                </Button>
-                <Button @click="toggleTheme" variant="ghost" class="glass-button">
-                    <Icon name="mdi:theme-light-dark" />
                 </Button>
             </div>
         </div>
@@ -37,11 +37,17 @@
                 <CardContent>
                     <div class="flex flex-col items-center justify-center space-y-6">
                         <div class="w-full h-[400px] bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                            <NuxtTurnstile v-model="token" @verify="handleVerify" />
+                            <TurnstileWidget @verify="handleVerify" />
                         </div>
                         <p class="text-center text-gray-600 dark:text-gray-400">
                             Veuillez compléter le challenge de sécurité pour accéder à l'application.
                         </p>
+                        <div v-if="debugMode" class="debug-panel p-4 bg-gray-100 dark:bg-gray-800 rounded-lg w-full">
+                            <h3 class="font-bold mb-2">Informations de débogage:</h3>
+                            <p>Clé Turnstile: {{ config.public.turnstileSiteKey || 'Non définie' }}</p>
+                            <p>API URL: {{ config.public.apiUrl || 'Non définie' }}</p>
+                            <p>Status: {{ debugStatus }}</p>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -50,21 +56,37 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { onMounted, onBeforeMount, ref } from 'vue'
+import { onBeforeMount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+// Ne pas appliquer le middleware d'authentification à cette page
+definePageMeta({
+    middleware: []
+})
+
 const router = useRouter()
-const token = ref<string>('')
+const config = useRuntimeConfig()
+const debugMode = ref(true)
+const debugStatus = ref('En attente de vérification')
+
+console.log('Page challenge initialisée')
+console.log('Configuration:', {
+    apiUrl: config.public.apiUrl,
+    turnstileSiteKey: config.public.turnstileSiteKey
+})
 
 // Vérification de la session au chargement de la page
 onBeforeMount(async () => {
-    if (import.meta.client) {
+    console.log('onBeforeMount appelé')
+    
+    if (process.client) {
+        console.log('Exécution côté client')
         const sessionId = localStorage.getItem('sessionId')
         if (sessionId) {
+            console.log('Session ID trouvé:', sessionId)
             try {
-                const response = await fetch(`${useRuntimeConfig().public.apiUrl}/session/check`, {
+                debugStatus.value = 'Vérification de session en cours...'
+                const response = await fetch(`${config.public.apiUrl}/session/check`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -73,21 +95,32 @@ onBeforeMount(async () => {
                 })
                 
                 if (response.ok) {
+                    console.log('Session valide, redirection vers l\'accueil')
+                    debugStatus.value = 'Session valide, redirection...'
                     router.push('/')
                 } else {
+                    console.log('Session invalide, suppression de la session')
+                    debugStatus.value = 'Session invalide'
                     // Si la session est invalide, on la supprime
                     localStorage.removeItem('sessionId')
                 }
             } catch (error) {
                 console.error('Erreur lors de la vérification de la session:', error)
+                debugStatus.value = `Erreur: ${error.message}`
             }
+        } else {
+            console.log('Aucune session trouvée')
+            debugStatus.value = 'Aucune session trouvée'
         }
     }
 })
 
 const handleVerify = async (token: string) => {
+    console.log('Token Turnstile reçu:', token.substring(0, 20) + '...')
+    debugStatus.value = 'Token reçu, validation en cours...'
+    
     try {
-        const response = await fetch(`${useRuntimeConfig().public.apiUrl}/_turnstile/validate`, {
+        const response = await fetch(`${config.public.apiUrl}/turnstile/validate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -96,50 +129,62 @@ const handleVerify = async (token: string) => {
         })
         
         if (response.ok) {
-            const { sessionId } = await response.json()
-            localStorage.setItem('sessionId', sessionId)
+            const data = await response.json()
+            console.log('Validation réussie, session créée:', data)
+            debugStatus.value = 'Validation réussie'
+            localStorage.setItem('sessionId', data.sessionId)
             router.push('/')
+        } else {
+            const error = await response.json()
+            console.error('Échec de la validation:', error)
+            debugStatus.value = `Échec: ${error.error || 'Erreur de validation'}`
         }
     } catch (error) {
         console.error('Erreur lors de la vérification du challenge:', error)
+        debugStatus.value = `Erreur: ${error.message}`
     }
 }
 
 function toggleTheme() {
-    const theme = document.documentElement.getAttribute('class');
-    document.documentElement.setAttribute('class', theme === 'dark' ? 'light' : 'dark');
+    const theme = document.documentElement.getAttribute('class')
+    document.documentElement.setAttribute('class', theme === 'dark' ? 'light' : 'dark')
 }
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap')
 
 * {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'DM Sans', sans-serif
 }
 
 .header-glass {
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px)
+  background-color: rgba(255, 255, 255, 0.1)
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1)
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05)
 }
 
 :deep(.dark) .header-glass {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: rgba(0, 0, 0, 0.2)
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05)
 }
 
 .glass-button {
-  backdrop-filter: blur(5px);
-  transition: all 0.3s ease;
+  backdrop-filter: blur(5px)
+  transition: all 0.3s ease
 }
 
 .glass-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.2)
 }
 
 :deep(.dark) .glass-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1)
+}
+
+.debug-panel {
+  font-size: 0.8rem
+  border: 1px solid rgba(255, 0, 0, 0.2)
 }
 </style> 
