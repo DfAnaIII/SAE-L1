@@ -152,39 +152,39 @@ function toggleTheme() {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap')
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap');
 
 * {
-  font-family: 'DM Sans', sans-serif
+  font-family: 'DM Sans', sans-serif;
 }
 
 .header-glass {
-  backdrop-filter: blur(10px)
-  background-color: rgba(255, 255, 255, 0.1)
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1)
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05)
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 :deep(.dark) .header-glass {
-  background-color: rgba(0, 0, 0, 0.2)
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05)
+  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .glass-button {
-  backdrop-filter: blur(5px)
-  transition: all 0.3s ease
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
 }
 
 .glass-button:hover {
-  background-color: rgba(255, 255, 255, 0.2)
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 :deep(.dark) .glass-button:hover {
-  background-color: rgba(255, 255, 255, 0.1)
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .debug-panel {
-  font-size: 0.8rem
-  border: 1px solid rgba(255, 0, 0, 0.2)
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 0, 0, 0.2);
 }
 </style> 
