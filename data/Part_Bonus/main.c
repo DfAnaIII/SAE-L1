@@ -58,9 +58,11 @@ typedef State Goal;
 
 // Chaque action a un nom, des préconditions, une liste de faits ajoutés, une liste de faits supprimés
 // On ajoute une priorité pour la partie 5.5
+// On ajoute des préconditions négatives pour la partie 6
 typedef struct {
     char name[MAX_LEN];
     State preconds;
+    State neg_preconds;     // Préconditions négatives (partie 6)
     State addList;
     State delList;
     int priority;   // Priorité de la règle (1-10)
@@ -133,6 +135,11 @@ void viderbuffer();
 void ChoixFichierUtilisateur();
 void ChoixCréationFichierUtilisateur();
 
+// Fonctions pour la partie 6
+int AfficherMenuPartie6();
+void ReformaterProblemeNegPrec();
+void TestPartie6();
+
 // ---------------------------------------------------------------------
 // 1) Affichage ASCII de présentation
 // ---------------------------------------------------------------------
@@ -158,6 +165,7 @@ int AfficherMenu() {
     printf("|  2) Indiquer un fichier personnalise              |\n");
     printf("|  3) Creer un nouveau fichier                      |\n");
     printf("|  4) Partie 5: Gestion de la complexité            |\n");
+    printf("|  5) Partie 6: Règles avec préconditions négatives |\n");
     printf("|  0) Quitter                                       |\n");
     printf("|                                                   |\n");
     printf("+---------------------------------------------------+\n");
@@ -255,8 +263,24 @@ int StateContainsAll(const State* st, const State* subset) {
 }
 
 // Test si on peut appliquer l'action : toutes ses preconditions sont dans l'etat
+// Pour la partie 6: et aucune de ses préconditions négatives n'est dans l'état
 int CanApply(const State* st, const Action* action) {
-    return StateContainsAll(st, &action->preconds);
+    // Vérifier que toutes les préconditions positives sont dans l'état
+    if (!StateContainsAll(st, &action->preconds)) {
+        return 0;
+    }
+    
+    // Vérifier qu'aucune précondition négative n'est dans l'état (partie 6)
+    for (int i = 0; i < action->neg_preconds.factCount; i++) {
+        for (int j = 0; j < st->factCount; j++) {
+            if (strcmp(st->facts[j], action->neg_preconds.facts[i]) == 0) {
+                // Si une précondition négative est présente, la règle n'est pas applicable
+                return 0;
+            }
+        }
+    }
+    
+    return 1;
 }
 
 // Applique l'action : on supprime delList, puis on ajoute addList (sans doublons)
@@ -342,6 +366,11 @@ int ParseFile(const char* filename, State* initial, Goal* goal, Action* actions,
         if(strncmp(line, "****", 4) == 0) {
             readingActionIndex++;
             (*actionCount)++;
+            
+            // Initialisation de la nouvelle action
+            memset(&actions[readingActionIndex], 0, sizeof(Action));
+            actions[readingActionIndex].priority = 1;  // Priorité par défaut
+            
             continue;
         }
 
@@ -361,6 +390,9 @@ int ParseFile(const char* filename, State* initial, Goal* goal, Action* actions,
             }
             else if(strncmp(line, "preconds:", 9) == 0) {
                 SplitFacts(line + 9, &actions[idx].preconds);
+            }
+            else if(strncmp(line, "neg_preconds:", 13) == 0) {
+                SplitFacts(line + 13, &actions[idx].neg_preconds);
             }
             else if(strncmp(line, "add:", 4) == 0) {
                 SplitFacts(line + 4, &actions[idx].addList);
@@ -657,6 +689,10 @@ int CreerFichier(char* nomFichier) {
         // Préconditions
         DemanderTexte("Préconditions (séparées par des virgules) : ", buf, MAX_LEN);
         fprintf(fp, "preconds:%s\n", buf);
+
+        // Préconditions négatives
+        DemanderTexte("Préconditions négatives (séparées par des virgules) : ", buf, MAX_LEN);
+        fprintf(fp, "neg_preconds:%s\n", buf);
 
         // Faits ajoutés
         DemanderTexte("Faits ajoutés (séparés par des virgules) : ", buf, MAX_LEN);
@@ -1194,6 +1230,156 @@ void GestionPartie5() {
 }
 
 // ---------------------------------------------------------------------
+// Fonctions pour la partie 6
+// ---------------------------------------------------------------------
+
+// Menu pour la partie 6
+int AfficherMenuPartie6() {
+    printf("+---------------------------------------------------+\n");
+    printf("|                                                   |\n");
+    printf("|     Partie 6: Règles avec préconditions négatives |\n");
+    printf("|                                                   |\n");
+    printf("|  1) Transformer un problème avec préc. négatives  |\n");
+    printf("|  2) Tester le problème chèvre/loup/chou amélioré  |\n");
+    printf("|  0) Retour au menu principal                      |\n");
+    printf("|                                                   |\n");
+    printf("+---------------------------------------------------+\n");
+    printf("Votre choix : ");
+    int choix;
+    scanf("%d", &choix);
+    return choix;
+}
+
+// Reformule le problème du loup, de la chèvre et du chou avec des préconditions négatives
+void ReformaterProblemeNegPrec() {
+    char* filename = "assets/chou_neg.txt";
+    FILE* fp = fopen(filename, "w");
+    if (!fp) {
+        printf("Erreur: impossible de créer le fichier %s\n", filename);
+        return;
+    }
+    
+    // État initial et but
+    fprintf(fp, "start:loup_gauche,chevre_gauche,chou_gauche,berger_gauche\n");
+    fprintf(fp, "finish:loup_droite,chevre_droite,chou_droite,berger_droite\n");
+    
+    // Règles avec préconditions négatives pour capturer les contraintes de sécurité
+    
+    // Traverser avec la chèvre vers la droite
+    fprintf(fp, "****\n");
+    fprintf(fp, "action:Traverser avec la chèvre vers la droite\n");
+    fprintf(fp, "preconds:chevre_gauche,berger_gauche\n");
+    fprintf(fp, "neg_preconds:\n");  // Pas de préconditions négatives
+    fprintf(fp, "add:chevre_droite,berger_droite\n");
+    fprintf(fp, "delete:chevre_gauche,berger_gauche\n");
+    
+    // Traverser avec la chèvre vers la gauche
+    fprintf(fp, "****\n");
+    fprintf(fp, "action:Traverser avec la chèvre vers la gauche\n");
+    fprintf(fp, "preconds:chevre_droite,berger_droite\n");
+    fprintf(fp, "neg_preconds:\n");  // Pas de préconditions négatives
+    fprintf(fp, "add:chevre_gauche,berger_gauche\n");
+    fprintf(fp, "delete:chevre_droite,berger_droite\n");
+    
+    // Traverser avec le loup vers la droite (ne doit pas laisser la chèvre et le chou seuls)
+    fprintf(fp, "****\n");
+    fprintf(fp, "action:Traverser avec le loup vers la droite\n");
+    fprintf(fp, "preconds:loup_gauche,berger_gauche\n");
+    fprintf(fp, "neg_preconds:chevre_gauche,chou_gauche\n");  // Interdire de laisser la chèvre et le chou seuls
+    fprintf(fp, "add:loup_droite,berger_droite\n");
+    fprintf(fp, "delete:loup_gauche,berger_gauche\n");
+    
+    // Traverser avec le loup vers la gauche (ne doit pas laisser la chèvre et le chou seuls)
+    fprintf(fp, "****\n");
+    fprintf(fp, "action:Traverser avec le loup vers la gauche\n");
+    fprintf(fp, "preconds:loup_droite,berger_droite\n");
+    fprintf(fp, "neg_preconds:chevre_droite,chou_droite\n");  // Interdire de laisser la chèvre et le chou seuls
+    fprintf(fp, "add:loup_gauche,berger_gauche\n");
+    fprintf(fp, "delete:loup_droite,berger_droite\n");
+    
+    // Traverser avec le chou vers la droite (ne doit pas laisser la chèvre et le loup seuls)
+    fprintf(fp, "****\n");
+    fprintf(fp, "action:Traverser avec le chou vers la droite\n");
+    fprintf(fp, "preconds:chou_gauche,berger_gauche\n");
+    fprintf(fp, "neg_preconds:chevre_gauche,loup_gauche\n");  // Interdire de laisser la chèvre et le loup seuls
+    fprintf(fp, "add:chou_droite,berger_droite\n");
+    fprintf(fp, "delete:chou_gauche,berger_gauche\n");
+    
+    // Traverser avec le chou vers la gauche (ne doit pas laisser la chèvre et le loup seuls)
+    fprintf(fp, "****\n");
+    fprintf(fp, "action:Traverser avec le chou vers la gauche\n");
+    fprintf(fp, "preconds:chou_droite,berger_droite\n");
+    fprintf(fp, "neg_preconds:chevre_droite,loup_droite\n");  // Interdire de laisser la chèvre et le loup seuls
+    fprintf(fp, "add:chou_gauche,berger_gauche\n");
+    fprintf(fp, "delete:chou_droite,berger_droite\n");
+    
+    // Traverser seul vers la droite (ne doit pas laisser de situations dangereuses)
+    fprintf(fp, "****\n");
+    fprintf(fp, "action:Traverser seul vers la droite\n");
+    fprintf(fp, "preconds:berger_gauche\n");
+    fprintf(fp, "neg_preconds:chevre_gauche,loup_gauche,chevre_gauche,chou_gauche\n");  // Éviter les situations dangereuses
+    fprintf(fp, "add:berger_droite\n");
+    fprintf(fp, "delete:berger_gauche\n");
+    
+    // Traverser seul vers la gauche (ne doit pas laisser de situations dangereuses)
+    fprintf(fp, "****\n");
+    fprintf(fp, "action:Traverser seul vers la gauche\n");
+    fprintf(fp, "preconds:berger_droite\n");
+    fprintf(fp, "neg_preconds:chevre_droite,loup_droite,chevre_droite,chou_droite\n");  // Éviter les situations dangereuses
+    fprintf(fp, "add:berger_gauche\n");
+    fprintf(fp, "delete:berger_droite\n");
+    
+    fclose(fp);
+    printf("Fichier '%s' créé avec succès.\n", filename);
+}
+
+// Test spécifique pour la partie 6
+void TestPartie6() {
+    char* filename = "assets/chou_neg.txt";
+    
+    // Vérifier si le fichier existe, sinon le créer
+    FILE* test = fopen(filename, "r");
+    if (!test) {
+        printf("Le fichier '%s' n'existe pas. Création...\n", filename);
+        ReformaterProblemeNegPrec();
+    } else {
+        fclose(test);
+    }
+    
+    printf("Test du problème loup/chèvre/chou avec préconditions négatives...\n");
+    AnalyseFichierAvecStrategie(filename, MODE_NORMAL);
+}
+
+// Gestion du menu de la partie 6
+void GestionPartie6() {
+    int choix = -1;
+    
+    while (choix != 0) {
+        choix = AfficherMenuPartie6();
+        
+        switch (choix) {
+            case 0:
+                printf("Retour au menu principal.\n");
+                break;
+            case 1:
+                ReformaterProblemeNegPrec();
+                break;
+            case 2:
+                TestPartie6();
+                break;
+            default:
+                printf("Choix invalide.\n");
+        }
+        
+        if (choix != 0) {
+            printf("\nAppuyez sur Entrée pour continuer...");
+            getchar();  // Pour capturer l'entrée précédente
+            getchar();  // Pour attendre l'appui sur Entrée
+        }
+    }
+}
+
+// ---------------------------------------------------------------------
 // 7) Programme principal
 // ---------------------------------------------------------------------
 int main() {
@@ -1222,6 +1408,9 @@ int main() {
                 break;
             case 4:
                 GestionPartie5();
+                break;
+            case 5:
+                GestionPartie6();
                 break;
             default:
                 printf("Choix invalide.\n");
