@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   modules: [
-    '@nuxt/content',
+    // '@nuxt/content', // Temporairement désactivé pour éviter les problèmes avec better-sqlite3
     '@nuxt/fonts',
     '@nuxt/icon',
     '@nuxt/scripts',
@@ -15,14 +15,12 @@ export default defineNuxtConfig({
   css: ['~/assets/css/tailwind.css'],
   vite: {
     plugins: [
-      tailwindcss({
-        config: './tailwind.config.ts'
-      }),
+      tailwindcss(),
     ],
   },
   postcss: {
     plugins: {
-      tailwindcss: {},
+      '@tailwindcss/postcss': {},
       autoprefixer: {},
     },
   },
