@@ -218,7 +218,5 @@ definePageMeta({
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-code {
-  @apply bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm font-mono;
-}
+
 </style>
