@@ -6,7 +6,7 @@ npm uninstall -g tailwindcss postcss autoprefixer
 npm uninstall tailwindcss postcss autoprefixer
 
 # Installer les dépendances nécessaires
-npm install -D tailwindcss@3.3.5 postcss@8.4.31 autoprefixer@10.4.16 postcss-import@15.1.0 tailwindcss-nesting@0.1.0
+npm install -D tailwindcss@3.3.5 postcss@8.4.31 autoprefixer@10.4.16 postcss-import@15.1.0 @tailwindcss/nesting@0.0.0-insiders.565cd3e
 
 # Assurer que le type est commonjs
 sed -i 's/"type": "module"/"type": "commonjs"/g' package.json

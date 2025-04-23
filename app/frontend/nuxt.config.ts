@@ -20,7 +20,7 @@ export default defineNuxtConfig({
   postcss: {
     plugins: {
       'postcss-import': {},
-      'tailwindcss/nesting': {},
+      '@tailwindcss/nesting': {},
       tailwindcss: {},
       autoprefixer: {}
     }
