@@ -6,7 +6,7 @@ npm uninstall -g tailwindcss postcss autoprefixer
 npm uninstall tailwindcss postcss autoprefixer
 
 # Installer les dépendances nécessaires
-npm install -D tailwindcss@3.3.5 postcss@8.4.31 autoprefixer@10.4.16 postcss-import@15.1.0 @tailwindcss/nesting@0.0.0-insiders.565cd3e
+npm install -D @nuxtjs/tailwindcss@6.8.0 @nuxtjs/color-mode@3.3.0
 
 # Assurer que le type est commonjs
 sed -i 's/"type": "module"/"type": "commonjs"/g' package.json
@@ -131,6 +131,17 @@ module.exports = {
     }
   },
   plugins: []
+}
+EOF
+
+# Créer le fichier utils.ts pour shadcn
+mkdir -p lib
+cat > lib/utils.ts << 'EOF'
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
 }
 EOF
 

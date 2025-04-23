@@ -3,6 +3,10 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
+  
+  css: [
+    '~/assets/css/tailwind.css'
+  ],
 
   modules: [
     // '@nuxt/content', // Temporairement désactivé pour éviter les problèmes avec better-sqlite3
@@ -10,34 +14,20 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@nuxt/scripts',
     'shadcn-nuxt',
+    '@nuxtjs/tailwindcss',
+    '@nuxtjs/color-mode',
     '@nuxtjs/turnstile'
   ],
   
-  // Configuration CSS intégrée
-  css: ['~/assets/css/tailwind.css'],
-  
-  // Configuration PostCSS intégrée
-  postcss: {
-    plugins: {
-      'postcss-import': {},
-      '@tailwindcss/nesting': {},
-      tailwindcss: {},
-      autoprefixer: {}
-    }
+  tailwindcss: {
+    cssPath: '~/assets/css/tailwind.css',
+    configPath: '~/tailwind.config.js',
+    exposeConfig: false,
+    viewer: true,
   },
   
-  // Configuration Vite intégrée
-  vite: {
-    server: {
-      allowedHosts: ['localhost', 'sae.gofindr.fr']
-    },
-    css: {
-      preprocessorOptions: {
-        scss: {
-          additionalData: '@use "@/assets/css/tailwind.css" as *;'
-        }
-      }
-    }
+  colorMode: {
+    classSuffix: ''
   },
   
   shadcn: {
@@ -52,8 +42,20 @@ export default defineNuxtConfig({
     componentDir: './components/ui'
   },
   
+  // Résolution des alias pour Shadcn
+  alias: {
+    utils: '~/lib/utils'
+  },
+  
   turnstile: {
     siteKey: process.env.CLOUDFLARE_SITE_KEY
+  },
+  
+  // Configuration Vite
+  vite: {
+    server: {
+      allowedHosts: ['localhost', 'sae.gofindr.fr']
+    }
   },
   
   runtimeConfig: {
@@ -62,5 +64,10 @@ export default defineNuxtConfig({
       apiUrl: process.env.API_URL || 'http://localhost:4000',
       turnstileSiteKey: process.env.CLOUDFLARE_SITE_KEY
     }
+  },
+  
+  // Configuration de fetch/useFetch global
+  typescript: {
+    shim: false
   }
 })

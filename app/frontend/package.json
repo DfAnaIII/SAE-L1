@@ -15,6 +15,8 @@
     "@nuxt/fonts": "^0.11.1",
     "@nuxt/icon": "^1.12.0",
     "@nuxt/scripts": "^0.11.5",
+    "@nuxtjs/color-mode": "^3.3.0",
+    "@nuxtjs/tailwindcss": "^6.8.0",
     "@nuxtjs/turnstile": "^0.6.3",
     "@unhead/vue": "^2.0.5",
     "@vueuse/core": "^13.1.0",
