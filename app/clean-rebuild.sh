@@ -17,10 +17,12 @@ echo "Nettoyage du cache Docker..."
 docker builder prune -f
 
 # Nettoyer les dossiers node_modules dans frontend
-echo "Nettoyage des modules Node.js..."
+echo "Nettoyage des modules Node.js et des fichiers de configuration conflictuels..."
 rm -rf frontend/node_modules
 rm -rf frontend/.nuxt
 rm -rf frontend/.output
+rm -f frontend/postcss.config.js frontend/postcss.config.ts frontend/postcss.config.cjs
+rm -f frontend/vite.config.js frontend/vite.config.ts frontend/vite.config.cjs
 
 # Reconstruire sans cache
 echo "Reconstruction des images..."

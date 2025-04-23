@@ -5,23 +5,11 @@ set -e
 npm uninstall -g tailwindcss postcss autoprefixer
 npm uninstall tailwindcss postcss autoprefixer
 
-# Installer des versions spécifiques
-npm install -D tailwindcss@3.3.5 postcss@8.4.31 autoprefixer@10.4.16 postcss-import@15.1.0
+# Installer les dépendances nécessaires
+npm install -D tailwindcss@3.3.5 postcss@8.4.31 autoprefixer@10.4.16 postcss-import@15.1.0 tailwindcss-nesting@0.1.0
 
-# Asssurer que le type est commonjs
+# Assurer que le type est commonjs
 sed -i 's/"type": "module"/"type": "commonjs"/g' package.json
-
-# Créer un fichier postcss.config.js correct
-cat > postcss.config.js << 'EOF'
-module.exports = {
-  plugins: {
-    'postcss-import': {},
-    'tailwindcss/nesting': {},
-    tailwindcss: {},
-    autoprefixer: {}
-  }
-}
-EOF
 
 # Créer un fichier tailwind.css basique
 cat > assets/css/tailwind.css << 'EOF'
@@ -73,6 +61,15 @@ cat > assets/css/tailwind.css << 'EOF'
     --border: #374151;
     --input: #374151;
     --ring: #6b7280;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }
 EOF
@@ -137,14 +134,21 @@ module.exports = {
 }
 EOF
 
-# Supprimer les fichiers de configuration pour éviter les conflits
+# Supprimer les fichiers de configuration externes pour éviter les conflits avec Nuxt
+rm -f postcss.config.js
+rm -f postcss.config.ts
+rm -f postcss.config.cjs
+rm -f vite.config.js
+rm -f vite.config.ts
+rm -f vite.config.cjs
 rm -f tailwind.config.cjs
 rm -f tailwind.config.ts
 
-# S'assurer que le dossier .nuxt est accessible en écriture
-chmod -R 777 /app/.nuxt
+# S'assurer que les dossiers nécessaires sont accessibles en écriture
+mkdir -p /app/.nuxt /app/.output
+chmod -R 777 /app/.nuxt /app/.output
 
-# Mettre à jour globalement le cache npm
+# Nettoyer le cache et les dépendances
 npm cache clean --force
 
 # Exécuter la commande spécifiée
