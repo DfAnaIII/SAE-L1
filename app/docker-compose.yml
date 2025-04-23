@@ -8,11 +8,12 @@ services:
     environment:
       - API_URL=http://backend:4000
       - CLOUDFLARE_SITE_KEY=${CLOUDFLARE_SITE_KEY}
+      - HOST=0.0.0.0
     volumes:
       - frontend_node_modules:/app/node_modules
       - ./frontend:/app
       - nuxt_data:/app/.nuxt
-    command: npm run dev
+    command: sh -c "npm run build && npm run start"
     depends_on:
       - backend
     networks:

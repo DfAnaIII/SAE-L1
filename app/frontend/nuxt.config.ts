@@ -39,5 +39,10 @@ export default defineNuxtConfig({
       apiUrl: process.env.API_URL || 'http://localhost:4000',
       turnstileSiteKey: process.env.CLOUDFLARE_SITE_KEY
     }
+  },
+  vite: {
+    server: {
+      allowedHosts: ['localhost', 'sae.gofindr.fr']
+    }
   }
 })
