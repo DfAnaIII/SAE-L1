@@ -4,6 +4,10 @@
 echo "Arrêt des conteneurs..."
 docker-compose down
 
+# Supprimer les volumes pour un nettoyage complet
+echo "Suppression des volumes..."
+docker volume rm app_frontend_node_modules app_nuxt_data || true
+
 # Supprimer les images
 echo "Suppression des images Docker..."
 docker rmi app_frontend app_backend || true
@@ -11,6 +15,12 @@ docker rmi app_frontend app_backend || true
 # Nettoyer le cache Docker builder
 echo "Nettoyage du cache Docker..."
 docker builder prune -f
+
+# Nettoyer les dossiers node_modules dans frontend
+echo "Nettoyage des modules Node.js..."
+rm -rf frontend/node_modules
+rm -rf frontend/.nuxt
+rm -rf frontend/.output
 
 # Reconstruire sans cache
 echo "Reconstruction des images..."

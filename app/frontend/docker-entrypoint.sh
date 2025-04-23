@@ -2,38 +2,136 @@
 set -e
 
 # Désinstaller les packages problématiques
-npm uninstall tailwindcss postcss autoprefixer @tailwindcss/postcss
+npm uninstall -g tailwindcss postcss autoprefixer
+npm uninstall tailwindcss postcss autoprefixer
 
 # Installer des versions spécifiques
-npm install -D tailwindcss@2.2.19 postcss@8.2.15 autoprefixer@10.2.6
+npm install -D tailwindcss@3.3.5 postcss@8.4.31 autoprefixer@10.4.16 postcss-import@15.1.0
 
-# Modifier package.json pour remplacer "type": "module" par "type": "commonjs"
+# Asssurer que le type est commonjs
 sed -i 's/"type": "module"/"type": "commonjs"/g' package.json
+
+# Créer un fichier postcss.config.js correct
+cat > postcss.config.js << 'EOF'
+module.exports = {
+  plugins: {
+    'postcss-import': {},
+    'tailwindcss/nesting': {},
+    tailwindcss: {},
+    autoprefixer: {}
+  }
+}
+EOF
 
 # Créer un fichier tailwind.css basique
 cat > assets/css/tailwind.css << 'EOF'
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #1f2937;
+    --card: #ffffff;
+    --card-foreground: #1f2937;
+    --popover: #ffffff;
+    --popover-foreground: #1f2937;
+    --primary: #4b5563;
+    --primary-foreground: #f9fafb;
+    --secondary: #f3f4f6;
+    --secondary-foreground: #4b5563;
+    --muted: #f3f4f6;
+    --muted-foreground: #6b7280;
+    --accent: #f3f4f6;
+    --accent-foreground: #4b5563;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #e5e7eb;
+    --input: #e5e7eb;
+    --ring: #9ca3af;
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: #1f2937;
+    --foreground: #f9fafb;
+    --card: #1f2937;
+    --card-foreground: #f9fafb;
+    --popover: #1f2937;
+    --popover-foreground: #f9fafb;
+    --primary: #f9fafb;
+    --primary-foreground: #4b5563;
+    --secondary: #374151;
+    --secondary-foreground: #f9fafb;
+    --muted: #374151;
+    --muted-foreground: #9ca3af;
+    --accent: #374151;
+    --accent-foreground: #f9fafb;
+    --destructive: #7f1d1d;
+    --destructive-foreground: #f9fafb;
+    --border: #374151;
+    --input: #374151;
+    --ring: #6b7280;
+  }
+}
 EOF
 
-# Créer un fichier tailwind.config.js (peut être .js maintenant que le package.json est modifié)
+# Créer un fichier tailwind.config.js compatible avec v3
 cat > tailwind.config.js << 'EOF'
+/** @type {import('tailwindcss').Config} */
 module.exports = {
-  mode: 'jit',
-  purge: [
+  darkMode: 'class',
+  content: [
     './components/**/*.{js,vue,ts}',
     './layouts/**/*.vue',
     './pages/**/*.vue',
     './plugins/**/*.{js,ts}',
     './app.vue'
   ],
-  darkMode: 'class',
   theme: {
-    extend: {}
-  },
-  variants: {
-    extend: {}
+    extend: {
+      colors: {
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        primary: {
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)'
+        },
+        secondary: {
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)'
+        },
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground)'
+        },
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)'
+        },
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)'
+        },
+        popover: {
+          DEFAULT: 'var(--popover)',
+          foreground: 'var(--popover-foreground)'
+        },
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)'
+        }
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)'
+      }
+    }
   },
   plugins: []
 }
@@ -42,6 +140,12 @@ EOF
 # Supprimer les fichiers de configuration pour éviter les conflits
 rm -f tailwind.config.cjs
 rm -f tailwind.config.ts
+
+# S'assurer que le dossier .nuxt est accessible en écriture
+chmod -R 777 /app/.nuxt
+
+# Mettre à jour globalement le cache npm
+npm cache clean --force
 
 # Exécuter la commande spécifiée
 exec "$@" 

@@ -3,12 +3,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
     ports:
       - "127.0.0.1:3030:3000"
     environment:
       - API_URL=http://backend:4000
       - CLOUDFLARE_SITE_KEY=${CLOUDFLARE_SITE_KEY}
       - HOST=0.0.0.0
+      - NODE_ENV=production
     volumes:
       - frontend_node_modules:/app/node_modules
       - ./frontend:/app
